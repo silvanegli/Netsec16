@@ -1,0 +1,10 @@
+# The older pyjwt version is the version right before the vulnerability has been patched.
+#pyjwt==0.4.2
+pyjwt
+
+
+# The old pyjwt version is not compatible with the newest cryptography release
+# The breaking changes have been introduced after version 0.7.1, but this version is not compatible with Ubuntu 16.04
+# see https://cryptography.io/en/latest/changelog/#id26
+#cryptography==0.7.1
+cryptography
