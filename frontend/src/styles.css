@@ -1,0 +1,28 @@
+.container {
+    margin-top: 180px;
+}
+
+app-root {
+    width: 300px;
+    margin: 0 auto;
+}
+
+.dashboard-link {
+    position: absolute;
+    top: 50px;
+    right: 50px;
+    width: 150px;
+    height: 40px;
+    background: green;
+    color: #FFF;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.btn-default, .btn-default[disabled]:hover {
+    background: green;
+    color: #FFF;
+    border: solid 1px #3c763d;
+    font-weight: bold;
+}
