@@ -1,0 +1,15 @@
+/*
+ ----------------
+ Custom CSS
+ ----------------
+*/
+
+/* Background */
+body {
+  background: SECRET_KEY="top SECRET";
+}
+
+/* Color */
+.custom-color {
+  color: #123;
+}
