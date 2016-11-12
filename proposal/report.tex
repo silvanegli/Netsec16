@@ -57,9 +57,13 @@ The second task should make students aware of how user input needs to be sanitiz
 \section{Implementation}
 \subsection{Requirements}
 %TODO hope this is ok like this, was not quite sure what to put here
-We have to make a web interface, where users first have to get a JWT to determine if they are standard users or administrators. In the web interface itself the users can chat. The administrators can also apply changes to the appearance over special commands, which are written in the normal textbox like with Slack. These commands are then bash commands, which can change the html-file where the css-code is integrated.
+%We have to make a web interface, where users first have to get a JWT to determine if they are standard users or administrators. In the web interface itself the users can chat. The administrators can also apply changes to the appearance over special commands, which are written in the normal textbox like with Slack. These commands are then bash commands, which can change the html-file where the css-code is integrated.
+
+%lukasbi try below
+We need a webserver which runs python and standard bash. Thereon we use django and either an old or patched JWT library. We need the django application to use the subprocess module with the shell option set to true, without sanitizing the user input.
+
 \subsection{Deployment}
-% Not quite sure what I should write here
+% TODO Not quite sure what I should write here
 We separated the work in several parts. On one hand there has to be Django, which uses JWT. Then also the background of the server.
 
 \section{Solution}
@@ -73,8 +77,10 @@ The first step is to forge a token. Then he has to send this token so that he be
 \section{Mitigation}
 %how can the vulnerability be fixed or mitigated so that the challenge exploit does not work? For example, if the challenge vulnerability is that an HTTPS request can be intercepted and rewritten as an HTTP request, a mitigation is to have the server's response enforce the future use of HTTPS. This would protect against future attacks, though not an ongoing attack.
 
-To tackle the first task one has to prevent that the 'none' algorithm can be used. However this can still lead to some problems so the best thing is to only accept one algorithm predefined by the server.\\
-The problem of bash injection in the second task can be solved by either not using the text field for the changes one would like to make but buttons for example. An other way would be to check the strings for malicious substrings or even only allow certain strings and if a string does not match the predefined ones it is not accepted.
+The first problem can be solved by disallowing the client to choose the 'none' algorithm as signing algorithm for his JWT token.
+%To tackle the first task one has to prevent that the 'none' algorithm can be used. %However this can still lead to some problems so the best thing is to only accept one algorithm predefined by the server.
+\\
+The problem of bash injection in the second task can be solved by checking the strings for malicious substrings or even only allow certain strings and if a string does not match the predefined ones it is not accepted.
 
 \section{Conclusion}
 We made a challenge consisting of two general problems. On one hand not perfectly implemented access measures, which can lead to a permission increase by malicious users. On the other hand bash injections, which are the consequence of not properly checking inputs. Both are common problems, which could mostly be tackled in a simple way.
