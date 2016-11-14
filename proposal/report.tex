@@ -41,10 +41,16 @@ The first task requires some offline work as one has to forge a token to get adm
 %one or more categories for the challenge. You can see a full list of possible challenges by going to the Hacking Lab home page, clicking the Statistics tab near the center of the page, and then clicking Challenge Details under the Challenge Statistics box.
 
 The challenge belongs to the category web security. %TODO maybe also programming
+
 \subsection{Mission}
 %a summary of the challenge objective. For example, a school's online registration form may have an SQL injection vulnerability. Using SQL injection in this form to execute a DROP statement can cause a school to lose their entire year's student records.
 
 There is web application (the chat service) hosted by some major company. Your task is it to break into this application as a weak entry point and steal the private key of the web application which you know is also used by other web applications hosted by this company. The objective can be achieved by using two vulnerabilities in the web application, first the JWT signing algorithm and second a bash injection.
+
+A simple chat service is provided by a company in the form of a web application. There is only one chat room, and all authenticated users might read and send messages to this room. There is an additional administrative role, which allows users belonging to this role to invoke a selection of admin commands, e.g. to change the background color of the chat window.
+
+The challenge is expose the secret key of the web application by exploiting two vulnerabilities in the web application. The first vulnerability can be used to gain administrative user rights and the second allows an administrator to craft a malicious admin command to reveal the secret key.
+
 
 %The objective of the first task is to become an administrator by using the JWT vulnerability. The vulnerability is that it is possible to sign the tokens oneself and send them with the 'none' algorithm.\\
 %The objective of the second task is to exploit the bash injection vulnerability. There one has then to use this to extract the private key of the server by writing it to the html-file.
@@ -59,8 +65,7 @@ The second task should make students aware of how user input needs to be sanitiz
 %TODO hope this is ok like this, was not quite sure what to put here
 %We have to make a web interface, where users first have to get a JWT to determine if they are standard users or administrators. In the web interface itself the users can chat. The administrators can also apply changes to the appearance over special commands, which are written in the normal textbox like with Slack. These commands are then bash commands, which can change the html-file where the css-code is integrated.
 
-%lukasbi try below
-We need a webserver which runs python and standard bash. Thereon we use django and either an old or patched JWT library. We need the django application to use the subprocess module with the shell option set to true, without sanitizing the user input.
+We need a webserver which runs Python and standard bash. Thereon we use the web framework dDango and either an old or patched JWT library, such as REFERENCE. To run the admin commands, the command is first authenticated and parsed using Django and then executed as a bash command in a subprocess. The commands directly write into CSS files to modify the color options.
 
 \subsection{Deployment}
 % TODO Not quite sure what I should write here
