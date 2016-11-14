@@ -15,7 +15,7 @@
     {\small\textsf{\emph{#3}}}
 }}
 
-\title{JWT and Bash Injection} %TODO or something more cryptic?
+\title{JSON Web Tokens and Bash Injection} %TODO or something more cryptic?
 \author{Network Security HS16 - Group 6\\Lukas Bischofberger, Silvan Egli, Jonas Passerini, Lukas Widmer}
 
 \begin{document}
@@ -25,68 +25,102 @@
 \begin{abstract}
 %a short summary of the challenge. You should include the problem or vulnerability addressed by the challenge and the approach used to exploit the vulnerability.
 
-The basis of our challenge is a chat service. There are normal users and administrators. To authenticate the users JSON Web Tokens (JWT) are used. The administrators can make changes to the appearance of the website. The challenge consists of two consecutive tasks, where the ultimate goal is to extract a private key on the server. \\
-The first tasks is to take advantage of a possible misconfiguration of JWT. We take advantage of the fact that certain implementations of JWT libraries allow the client to choose the signing algorithm.% The problem of JWT is that they need an algorithm for the verification step however an attacker can bypass this and so be seen as administrator. This is done in the way that the attacker forges his own token.\\
-The second task is to exploit the system by use of a bash injection which is only possible with use of the administrator rights.% The changes of the appearance is done over the bash so a bash injection is possible. 
-This vulnerability can then be used to extract the private key of the server.
+A chat services suffers from two vulnerabilities, which allow an arbitrary user to gain administrative access rights and to extract the secret key of the web application by performing a bash injection.
+The first part of the challenge is a JSON Web Token (JWT) vulnerability where the client is able to select a trivial 'null' signing algorithm. Using a fake authentication token, it is possible to circumvent the authentication mechanism and send chat messages as an administrator. This enables a normal user to send privileged admin commands.
+The second part of the challenge exploits a bash injection, which is possible due to a wrongly configured subprocess call with unsanitized user input and therefore allows arbitrary code execution. A malicious admin command can be crafted to extract the secret key from the settings file.
+
 \end{abstract}
 
 \section{Challenge Description}
 
 \subsection{Type of Challenge}
 %whether the challenge is online or offline. For example, exploiting a web application requires the application to be online, whereas analyzing captured packets can be done offline.
-The first task requires some offline work as one has to forge a token to get administrator rights. The rest of the challenge is an online as our chat service is a web application and the extraction of the private key will only be possible when the application is online.
+
+The first part of the challenge requires to analyze and craft authentication tokens, which can be done offline. To test the crafted tokens, the web application needs to be online.
+
+For the second part of the challenge, the web application needs to be running in order to extract the secret key, and is therefore an online attack.
+
 
 \subsection{Category}
 %one or more categories for the challenge. You can see a full list of possible challenges by going to the Hacking Lab home page, clicking the Statistics tab near the center of the page, and then clicking Challenge Details under the Challenge Statistics box.
 
-The challenge belongs to the category web security. %TODO maybe also programming
+The challenge belongs to the category Web Security and also requires some basic Linux and Networking understanding.
 
 \subsection{Mission}
 %a summary of the challenge objective. For example, a school's online registration form may have an SQL injection vulnerability. Using SQL injection in this form to execute a DROP statement can cause a school to lose their entire year's student records.
 
-There is web application (the chat service) hosted by some major company. Your task is it to break into this application as a weak entry point and steal the private key of the web application which you know is also used by other web applications hosted by this company. The objective can be achieved by using two vulnerabilities in the web application, first the JWT signing algorithm and second a bash injection.
+A simple chat service is provided by a company in the form of a web application. There is only one chat room, and all authenticated users might read messages and send new ones to this chat room. There is an additional administrative role, which allows users belonging to this role to invoke several admin commands, e.g. to change the background color of the chat window. Admin commands sent by basic users have no effect.
 
-A simple chat service is provided by a company in the form of a web application. There is only one chat room, and all authenticated users might read and send messages to this room. There is an additional administrative role, which allows users belonging to this role to invoke a selection of admin commands, e.g. to change the background color of the chat window.
+The secret key used by the chat service is  highly sensitive, since it is also used by other services of the company. The goal of the challenge is to expose the secret key.
+To achieve the goal, two vulnerabilities need to be combined in a clever way.
+In a first step, an attacker has access to a basic user account and the goal is to gain administrative user rights by circumventing the token based authentication mechanism.
+In a second step, the attacker uses the administrative rights gained in the previous step to craft a malicious admin command, which exposes the secret key.
 
-The challenge is expose the secret key of the web application by exploiting two vulnerabilities in the web application. The first vulnerability can be used to gain administrative user rights and the second allows an administrator to craft a malicious admin command to reveal the secret key.
 
-
-%The objective of the first task is to become an administrator by using the JWT vulnerability. The vulnerability is that it is possible to sign the tokens oneself and send them with the 'none' algorithm.\\
-%The objective of the second task is to exploit the bash injection vulnerability. There one has then to use this to extract the private key of the server by writing it to the html-file.
 \subsection{Learning Goal}
 %what you hope students will learn from the challenge and why it is important. For example, if the challenge is to perform a TLS-based man-in-the-middle attack using a similar-looking domain name, students will learn the importance of checking that the domain name in the certificate matches the one in the address bar. This is important because it is usually much easier to obtain a fraudulent certificate for a similar-looking domain name than for the actual domain.
 
-The first task should teach the student about JWT and token based authentication in general. But also increase the awareness of the problem when the client can choose the signing algorithm. %This is especially a problem if it is also possible to not use any  algorithm. This has to be handled, if it is not done by the library itself.
-The second task should make students aware of how user input needs to be sanitized when used as input to SQL or bash. %If it is really needed that users can make inputs to the bash, one should check the string for unintended commands or only allow certain strings to be executed.
+The first part of the challenge teaches the student about how to collect and analyze token based authentication mechanisms, in particular the JSON Web Token library. The vulnerability should increase the awareness of the problem, if the client is allowed to choose the signing algorithm.
+
+The second part of the challenge demonstrates the danger of executing unsanitized input from an untrusted source and how to exploit such a vulnerability with a limited interface.
+
 
 \section{Implementation}
 \subsection{Requirements}
-%TODO hope this is ok like this, was not quite sure what to put here
-%We have to make a web interface, where users first have to get a JWT to determine if they are standard users or administrators. In the web interface itself the users can chat. The administrators can also apply changes to the appearance over special commands, which are written in the normal textbox like with Slack. These commands are then bash commands, which can change the html-file where the css-code is integrated.
 
-We need a webserver which runs Python and standard bash. Thereon we use the web framework dDango and either an old or patched JWT library, such as REFERENCE. To run the admin commands, the command is first authenticated and parsed using Django and then executed as a bash command in a subprocess. The commands directly write into CSS files to modify the color options.
+The web application is implemented in Python using the web framework Django and SQLite is used as the database backend. Token authentication is provided by the JSON Web Token library, which is either outdated or patched to enable the first vulnerability. The frontend of the chat application is provided by Angular2. The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
+
 
 \subsection{Deployment}
-% TODO Not quite sure what I should write here
-We separated the work in several parts. On one hand there has to be Django, which uses JWT. Then also the background of the server.
+% TODO: specify if app is deployed using the built-in develop server or e.g. via nginx.
+The web application is deployed behind a web server and listens on port 80.
+
 
 \section{Solution}
 
 \subsection{Hints}
 %up to three hints to give to users solving the challenge.
-We will give some hints like that we use JWT. This should help to find out the problem with the 'none' algorithm. Then in the chat history some special commands will be written, so that a user notices that an administrator can do more then just chat.
+\begin{enumerate}
+	\item Analyze the tokens used to authenticate chat messages. Can you decode the token to reveal further information about the library used to verify the tokens?
+	\item The admin commands do not require any database access. Try to find out what happens, e.g. if an administrator changes the background color of the chat window.
+	\item The secret key of a Django applications is usually stored in a file called settings.py
+\end{enumerate}
+
 \subsection{Step-by-Step Instructions}
 %a description of every step a user has to perform to solve the challenge. This does not need to be the final version, but it should allow us to get a feel for the challenge.
-The first step is to forge a token. Then he has to send this token so that he becomes an administrator. Then he uses his new rights to write a bash command to write the private key to html file.
+\begin{enumerate}
+	\item Exploit the JWT web token vulnerability to bypass authentication
+	\begin{enumerate}
+		\item Collect and analyze the authentication tokens used by the application to authenticate chat messages. To do so, you can use Wireshark or the Firefox Add-on Tamper Data.
+		\item Decode the base64 encoded tokens and find out that the chat application utilizes an outdated JSON Web Token library.
+		\item A short Google search should reveal several open vulnerabilities, such as the "null Algorithm" described on the auth0.com blog~\footnote{\url{https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/}}.
+		\item Learn about the algorithm and create your own token, which authenticates you as the administrator. To find the ID of an administrator you might need to look at the source of the chat history.
+		\item You should be able to send chat messages as an administrator and invoke admin commands.
+	\end{enumerate}
+	\item Perform a bash injection by crafting a malicious admin command
+	\begin{enumerate}
+		\item Try to find out how admin commands work. Observe the CSS style sheet and observe that the color values are directly written into the CSS file.
+		\item Find a bash command to read and print the contents of a file, which could be used as a color value. e.g. cat settings.py
+		\item Embed the bash command in an admin command, such that instead of the color value the output of your bash command is written into the CSS file. Note that in bash injections, it is often not possible to inject commands with white space characters and you might need to modify your bash command accordingly. An example for an admin command could be: \textbackslash\textbackslash background \$({cat,settings.py})
+		\item Take a look again at the CSS file, which should now contain the secret key. It is also possible to perform different attacks, e.g. to open a reverse shell and then manually searching the secret key.
+	\end{enumerate}
+	
+\end{enumerate}
+
 \section{Mitigation}
 %how can the vulnerability be fixed or mitigated so that the challenge exploit does not work? For example, if the challenge vulnerability is that an HTTPS request can be intercepted and rewritten as an HTTP request, a mitigation is to have the server's response enforce the future use of HTTPS. This would protect against future attacks, though not an ongoing attack.
 
-The first problem can be solved by disallowing the client to choose the 'none' algorithm as signing algorithm for his JWT token.
-%To tackle the first task one has to prevent that the 'none' algorithm can be used. %However this can still lead to some problems so the best thing is to only accept one algorithm predefined by the server.
-\\
-The problem of bash injection in the second task can be solved by checking the strings for malicious substrings or even only allow certain strings and if a string does not match the predefined ones it is not accepted.
+The JWT vulnerability can be solved by disallowing clients to choose an algorithm, especially if it is a 'null' algorithm. Additionally, all dependencies should be kept up to date to prevent other vulnerabilities.
+
+The bash injection vulnerability can be prevented by properly sanitizing the user input and by disabling the shell access. A nicer solution would be to prevent the use of subprocesses completely and instead manage the color configuration within Django, e.g. by writing the values to the database and dynamically parse the website using a templating system.
+
+The attacker had full access to the system by executing arbitrary commands or opening a reverse shell, therefore the whole system is compromised and all keys should be renewed, including all the systems which used the same secret key.
+
+
 
 \section{Conclusion}
-We made a challenge consisting of two general problems. On one hand not perfectly implemented access measures, which can lead to a permission increase by malicious users. On the other hand bash injections, which are the consequence of not properly checking inputs. Both are common problems, which could mostly be tackled in a simple way.
+The presented challenge consists of two vulnerabilities and demonstrates how they can be combined to extract the secret key of a web application. The student learns how the JWT library works and how the token authentication can be bypassed, if the client is able to select a weak or even trivial signing algorithm.
+The student also learns how to perform a bash injection by exploiting a subprocess call suffering from unsanitized user input.
+Both vulnerabilities reflect common problems, which could mostly be tackled in a simple way.
+
 \end{document}
