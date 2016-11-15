@@ -15,7 +15,7 @@
     {\small\textsf{\emph{#3}}}
 }}
 
-\title{JSON Web Tokens and Bash Injection} %TODO or something more cryptic?
+\title{JSON Web Tokens and Bash Injection}
 \author{Network Security HS16 - Group 6\\Lukas Bischofberger, Silvan Egli, Jonas Passerini, Lukas Widmer}
 
 \begin{document}
@@ -68,7 +68,7 @@ The second part of the challenge demonstrates the danger of executing unsanitize
 \section{Implementation}
 %\subsection{Requirements}
 
-The web application is implemented in Python using the web framework Django and SQLite is used as the database backend. Token authentication is provided by a pyjwt, a Python implementation of JSON Web Tokens, which is either outdated or patched to enable the first vulnerability. The frontend of the chat application is provided by Angular2. The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
+The web application is implemented in Python using the web framework Django and SQLite is used as the database backend. Token based authentication is provided by pyjwt, a Python implementation of JSON Web Tokens, which is either outdated or patched to enable the first vulnerability. The frontend of the chat application is implemented using Angular2. The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
 
 
 \section{Solution}
@@ -87,8 +87,8 @@ The web application is implemented in Python using the web framework Django and 
 	\item Exploit the JWT web token vulnerability to bypass authentication
 	\begin{enumerate}
 		\item Collect and analyze the authentication tokens used by the application to authenticate chat messages. To do so, you can use Wireshark or the Firefox Add-on Tamper Data.
-		\item Decode the base64 encoded tokens and find out that the chat application utilizes an outdated JSON Web Token library.
-		\item A short Google search should reveal several open vulnerabilities, such as the "none Algorithm" described on the auth0.com blog~\footnote{\url{https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/}}.
+		\item Decode the base64 encoded tokens and check its content.
+		\item A short Google search should reveal several vulnerabilities, such as the "none" Algorithm described on the auth0.com blog~\footnote{\url{https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/}}.
 		\item Learn about the algorithm and create your own token, which authenticates you as the administrator. To find the ID of an administrator you might need to look at the source of the chat history.
 		\item You should be able to send chat messages as an administrator and invoke admin commands.
 	\end{enumerate}
