@@ -26,7 +26,7 @@
 %a short summary of the challenge. You should include the problem or vulnerability addressed by the challenge and the approach used to exploit the vulnerability.
 
 A chat services suffers from two vulnerabilities, which allow an arbitrary user to gain administrative access rights and to extract the secret key of the web application by performing a bash injection.
-The first part of the challenge is a JSON Web Token (JWT) vulnerability where the client is able to select a trivial 'null' signing algorithm. Using a fake authentication token, it is possible to circumvent the authentication mechanism and send chat messages as an administrator. This enables a normal user to send privileged admin commands.
+The first part of the challenge is a JSON Web Token (JWT) vulnerability where the client is able to select a trivial 'none' signing algorithm. Using a fake authentication token, it is possible to circumvent the authentication mechanism and send chat messages as an administrator. This enables a normal user to send privileged admin commands.
 The second part of the challenge exploits a bash injection, which is possible due to a wrongly configured subprocess call with unsanitized user input and therefore allows arbitrary code execution. A malicious admin command can be crafted to extract the secret key from the settings file.
 
 \end{abstract}
@@ -60,20 +60,15 @@ In a second step, the attacker uses the administrative rights gained in the prev
 \subsection{Learning Goal}
 %what you hope students will learn from the challenge and why it is important. For example, if the challenge is to perform a TLS-based man-in-the-middle attack using a similar-looking domain name, students will learn the importance of checking that the domain name in the certificate matches the one in the address bar. This is important because it is usually much easier to obtain a fraudulent certificate for a similar-looking domain name than for the actual domain.
 
-The first part of the challenge teaches the student about how to collect and analyze token based authentication mechanisms, in particular the JSON Web Token library. The vulnerability should increase the awareness of the problem, if the client is allowed to choose the signing algorithm.
+The first part of the challenge teaches the student about how to collect and analyze token based authentication mechanisms, in particular JSON Web Tokens. The vulnerability should increase the awareness of the problem, if the client is allowed to choose the signing algorithm.
 
 The second part of the challenge demonstrates the danger of executing unsanitized input from an untrusted source and how to exploit such a vulnerability with a limited interface.
 
 
 \section{Implementation}
-\subsection{Requirements}
+%\subsection{Requirements}
 
-The web application is implemented in Python using the web framework Django and SQLite is used as the database backend. Token authentication is provided by the JSON Web Token library, which is either outdated or patched to enable the first vulnerability. The frontend of the chat application is provided by Angular2. The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
-
-
-\subsection{Deployment}
-% TODO: specify if app is deployed using the built-in develop server or e.g. via nginx.
-The web application is deployed behind a web server and listens on port 80.
+The web application is implemented in Python using the web framework Django and SQLite is used as the database backend. Token authentication is provided by a pyjwt, a Python implementation of JSON Web Tokens, which is either outdated or patched to enable the first vulnerability. The frontend of the chat application is provided by Angular2. The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
 
 
 \section{Solution}
@@ -93,7 +88,7 @@ The web application is deployed behind a web server and listens on port 80.
 	\begin{enumerate}
 		\item Collect and analyze the authentication tokens used by the application to authenticate chat messages. To do so, you can use Wireshark or the Firefox Add-on Tamper Data.
 		\item Decode the base64 encoded tokens and find out that the chat application utilizes an outdated JSON Web Token library.
-		\item A short Google search should reveal several open vulnerabilities, such as the "null Algorithm" described on the auth0.com blog~\footnote{\url{https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/}}.
+		\item A short Google search should reveal several open vulnerabilities, such as the "none Algorithm" described on the auth0.com blog~\footnote{\url{https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/}}.
 		\item Learn about the algorithm and create your own token, which authenticates you as the administrator. To find the ID of an administrator you might need to look at the source of the chat history.
 		\item You should be able to send chat messages as an administrator and invoke admin commands.
 	\end{enumerate}
@@ -110,7 +105,7 @@ The web application is deployed behind a web server and listens on port 80.
 \section{Mitigation}
 %how can the vulnerability be fixed or mitigated so that the challenge exploit does not work? For example, if the challenge vulnerability is that an HTTPS request can be intercepted and rewritten as an HTTP request, a mitigation is to have the server's response enforce the future use of HTTPS. This would protect against future attacks, though not an ongoing attack.
 
-The JWT vulnerability can be solved by disallowing clients to choose an algorithm, especially if it is a 'null' algorithm. Additionally, all dependencies should be kept up to date to prevent other vulnerabilities.
+The JWT vulnerability can be solved by disallowing clients to choose an algorithm, especially disallowing the 'none' algorithm. Additionally, all dependencies should be kept up to date to prevent other vulnerabilities.
 
 The bash injection vulnerability can be prevented by properly sanitizing the user input and by disabling the shell access. A nicer solution would be to prevent the use of subprocesses completely and instead manage the color configuration within Django, e.g. by writing the values to the database and dynamically parse the website using a templating system.
 
@@ -119,7 +114,7 @@ The attacker had full access to the system by executing arbitrary commands or op
 
 
 \section{Conclusion}
-The presented challenge consists of two vulnerabilities and demonstrates how they can be combined to extract the secret key of a web application. The student learns how the JWT library works and how the token authentication can be bypassed, if the client is able to select a weak or even trivial signing algorithm.
+The presented challenge consists of two vulnerabilities and demonstrates how they can be combined to extract the secret key of a web application. The student learns how JWT works and how the token authentication can be bypassed, if the client is able to select a weak or even trivial signing algorithm.
 The student also learns how to perform a bash injection by exploiting a subprocess call suffering from unsanitized user input.
 Both vulnerabilities reflect common problems, which could mostly be tackled in a simple way.
 
