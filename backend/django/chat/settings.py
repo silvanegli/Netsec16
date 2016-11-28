@@ -114,3 +114,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
+#change for "production"
+STATIC_ROOT = '/home/silvan/Code/netsec/netsec16/backend/django/static'
+
+CUSTOM_CSS = STATIC_ROOT + 'custom.css'

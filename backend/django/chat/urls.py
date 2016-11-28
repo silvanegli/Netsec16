@@ -17,7 +17,11 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from rest_framework_jwt.views import obtain_jwt_token
 
+from chat.views import RetrieveCreateMessages, change_background
+
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^token-auth/', obtain_jwt_token),
+    url(r'^messages/', RetrieveCreateMessages.as_view()),
+    url(r'^change-background/', change_background, name='change-background')
 ]
