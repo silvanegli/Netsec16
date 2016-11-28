@@ -1,0 +1,47 @@
+# Python specific
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+dist
+build
+
+# Project output
+*.log
+
+# Database
+*.sqlite
+*.sqlite3
+
+# Temp files & host system
+*.swp
+*.lock
+*.pid
+*.DS_Store
+*~
+src/static/CACHE
+
+# IDE
+.project
+.pydevproject
+.settings
+.idea/*
+
+# other
+*.pot
+htmlcov
+distribute-*.tar.gz
+
+# Django media directory
+media/
+bin
+.Python
+include
+lib
+src/CACHE
+src/.sass-cache
+.sass-cache
+*.mo
+
+venv/
+
