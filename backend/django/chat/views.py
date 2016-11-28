@@ -5,24 +5,22 @@ from rest_framework.response import Response
 
 from chat.serializers import MessageSerializer
 from chat.models import Message
-from chat.view_utils import change_background
+from chat.view_utils import execute_admin_command
 
 
 class RetrieveCreateMessages(ListCreateAPIView):
     serializer_class = MessageSerializer
+    queryset = Message.objects.all()
 
     def perform_create(self, serializer):
         message_text = serializer.validated_data.get('text')
         user = self.request.user
+
+        #if user is admin check message for special command codewords and execute command if any
+        if user.is_superuser():
+            execute_admin_command(message_text)
+
         message = Message.objects.create(text=message_text, writer=user)
         print('created new message: ' + message_text + ' for user: ' + user.username)
         serializer.instance = message
 
-
-@permission_classes((IsAdminUser, ))
-@api_view(('POST',))
-def change_background(request):
-    background_color = request.POST.get('background_color', '')
-    change_background(background_color)
-
-    return Response({"message": "changed background color"})
