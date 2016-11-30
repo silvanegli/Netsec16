@@ -1,14 +1,19 @@
 <div class="container">
+    <h1>Fancy Chat App</h1>
     <div class="row">
-        <form class="form-group">
-            <input type="text" name="title" class="form-control" [(ngModel)]="title">
-            <input type="text" name="message" class="form-control" [(ngModel)]="message">
-            <button type="submit" class="form-control">Send message</button>
+        <form class="form-group" #newMessage="ngForm" (submit)="onSendMessage()">
+            <textarea name="message" class="form-control" [(ngModel)]="text" required></textarea>
+            <button type="submit" class="form-control" [disabled]="newMessage.invalid">Send message</button>
         </form>
     </div>
     <div class="row">
        <ul>
-           <li>Title<br>Text</li>
+           <li *ngFor="let message of messages" [ngStyle]="{'border-color': color}">
+                <b><!--{{ message.writer.first_name }}
+                {{ message.writer.last_name }}-->
+                {{ message.writer.username }}</b> wrote at <small>{{ message.date | date: 'hh:mm' }} on {{ message.date | date: 'fullDate' }}</small>:
+               <p>{{ message.text }}</p>
+           </li>
        </ul>
     </div>
 </div>

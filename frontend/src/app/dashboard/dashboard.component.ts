@@ -10,7 +10,8 @@ import { Message } from './message';
 export class DashboardComponent implements OnInit {
 
     public text: string;
-    public title: string;
+    public messages: Message[];
+    public color: string;
 
     constructor(
         private apiService: ApiService
@@ -18,9 +19,14 @@ export class DashboardComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.messages = [];
         this.apiService.getMessages().subscribe(
             (messages: Message[]) => {
-                console.log(messages);
+                messages.map(
+                    (message) => {
+                        this.messages.push(message);
+                    }
+                );
             },
             (error: any) => {
                 console.log(error);
@@ -28,17 +34,23 @@ export class DashboardComponent implements OnInit {
         )
     }
 
-    private onSendMessage(): void {
-        let message: Message;
-        message.text = this.text;
-        message.title = this.title;
-        this.apiService.sendMessage(message).subscribe(
-            (message: Message) => (
-                console.log(message)
-            ),
+    public onSendMessage(): void {
+        this.apiService.sendMessage({'text': this.text}).subscribe(
+            (message: Message) => {
+                this.messages.push(message);
+                this.text = '';
+                this.reloadCSS();
+            },
             (error: any) => {
                 console.log(error);
             }
         );
+    }
+
+    private reloadCSS(): void {
+        this.apiService.getColor().subscribe(
+            (css: string) => (this.color = css),
+            (error: any) => (console.log(error))
+        );;
     }
 }

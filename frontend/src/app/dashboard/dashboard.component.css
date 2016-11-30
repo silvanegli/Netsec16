@@ -1,28 +1,26 @@
+h1 {
+    width: 260px;
+    margin: -100px auto 100px auto;
+}
+
 .row {
     text-align: center;
+    width: 450px;
+    margin: 0 auto;
 }
 
-.tile {
-    height: 250px;
-    width: 250px;
-    margin: 30px;
-    float: none;
-    display: inline-block;
-    padding: 100px 10px;
-    color: white;
-    font-size: 30px;
-    font-weight: bold;
+button {
+    margin-top: 10px;
 }
 
-.profile {
-    background: #0064A2;
+ul {
+    margin: 10px 0;
+    padding: 0;
 }
 
-.certificates {
-    background: #005A91;
-}
-
-.logout {
-    background: red;
-    cursor: pointer;
+li {
+    padding: 0;
+    list-style: none;
+    border-bottom: solid 1px gray;
+    margin-bottom: 5px;
 }

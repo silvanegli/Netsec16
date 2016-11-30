@@ -3,7 +3,7 @@ import { AuthHttp } from 'angular2-jwt';
 import { Observable } from 'rxjs';
 import { Logger } from './logging';
 import {
-     VERIFY_ENDPOINT, LOGIN_ENDPOINT, API_BASE_URL, MESSAGE_ENDPOINT
+     LOGIN_ENDPOINT, API_BASE_URL, MESSAGE_ENDPOINT, CSS_ENDPOINT
 } from './api.config';
 import { Response, RequestOptions, Headers, URLSearchParams } from '@angular/http';
 import { DataExtractor } from './data-extractor.service';
@@ -25,16 +25,26 @@ export class ApiService {
      * @returns {Message[]}
      */
     public getMessages(): Observable<Message[]> {
-        let options = new URLSearchParams();
-        options.append('status', 'active');
-        // return this.getRequest(this.fullUrl(CERTIFICATE_ENDPOINT), options)
-        //     .map((json: any) => (new Certificate(json)));
-        return Observable.of([].map((json: any) => new Message()));
+        return this.getRequest(this.fullUrl(MESSAGE_ENDPOINT))
+            .map(json => json.map(
+                json => new Message(json))
+            );
     }
 
     public sendMessage(message: Message): Observable<Message> {
-        return this.postRequest(this.fullUrl(MESSAGE_ENDPOINT), message);
+        return this.postRequest(this.fullUrl(MESSAGE_ENDPOINT), message)
+            .map((json: any) => new Message(json));
     }
+
+     public getColor(): Observable<string> {
+        return this.getRequest(this.fullUrl(CSS_ENDPOINT))
+            .map(json => {
+                let sub = json.substr(json.indexOf('li'));
+                sub = sub.substr(sub.indexOf('background:') + 12)
+                return sub.substr(0, sub.indexOf(';'));
+            });
+    }
+
 
     /**
      * Obtains a JWT for the credentials provided
@@ -46,17 +56,6 @@ export class ApiService {
     public obtainToken(username: string, password: string): Observable<any> {
         let payload: any = {username, password};
         return this.postRequest(this.fullUrl(LOGIN_ENDPOINT), payload);
-    }
-
-    /**
-     * Verifies the JWT
-     *
-     * @param token
-     * @returns {Observable<boolean>}
-     */
-    public verifyToken(token: string): Observable<any> {
-        let payload: any = {token};
-        return this.postRequest(this.fullUrl(VERIFY_ENDPOINT), payload);
     }
 
     /**

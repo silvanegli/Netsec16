@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Rx';
 import { JwtHelper } from 'angular2-jwt';
-import { Logger } from './logging';
 import { ApiService } from './api.service';
 
 export const TOKEN_NAME = 'jwt';
@@ -25,42 +24,29 @@ export class LoginService {
      * @returns {string}
      */
     public static loadToken(): string {
-        let tokenString = localStorage.getItem(TOKEN_NAME);
-        if (tokenString == null) {
-            tokenString = sessionStorage.getItem(TOKEN_NAME);
-        }
-        return tokenString;
+        return sessionStorage.getItem(TOKEN_NAME);
     }
 
     /**
-     * Stores the encoded token in the local storage (permanent == true) or the session storage (permanent == false)
+     * Stores the encoded token in the session storage
      * @param tokenString
-     * @param permanent
      */
-    private static storeToken(tokenString: string, permanent: boolean = true): void {
-        if (permanent) {
-            sessionStorage.removeItem(TOKEN_NAME);
-            localStorage.setItem(TOKEN_NAME, tokenString);
-        }
-        else {
-            localStorage.removeItem(TOKEN_NAME);
-            sessionStorage.setItem(TOKEN_NAME, tokenString);
-        }
+    private static storeToken(tokenString: string): void {
+        sessionStorage.setItem(TOKEN_NAME, tokenString);
     }
 
     /**
      * Deletes the stored token
      */
     private static deleteToken(): void {
-        localStorage.removeItem(TOKEN_NAME);
         sessionStorage.removeItem(TOKEN_NAME);
     }
 
 
     public constructor(
-        private logger: Logger,
         private apiService: ApiService
-    ) { }
+    ) {
+    }
 
     public get isLoggedIn(): Observable<boolean> {
         console.log(this.token);
@@ -76,13 +62,12 @@ export class LoginService {
      *
      * @param username
      * @param password
-     * @param keepLoggedIn
      * @returns {Observable<void>}
      */
-    public login(username: string, password: string, keepLoggedIn: boolean = true): Observable<boolean> {
+    public login(username: string, password: string): Observable<boolean> {
         return this.apiService.obtainToken(username, password)
             .do((data: any) => {
-                LoginService.storeToken(data.token, keepLoggedIn);
+                LoginService.storeToken(data.token);
             })
             .catch((error: any) => {
                 LoginService.deleteToken();
