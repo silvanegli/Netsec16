@@ -17,13 +17,14 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from rest_framework_jwt.views import obtain_jwt_token
 
-from chat.views import RetrieveCreateMessages
+from chat.views import RetrieveCreateMessages, getCSS
 
 
 chat_urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^login/', obtain_jwt_token),
     url(r'^messages/', RetrieveCreateMessages.as_view()),
+    url(r'^css/', getCSS),
 ]
 
 

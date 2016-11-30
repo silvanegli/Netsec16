@@ -1,8 +1,10 @@
+from rest_framework.decorators import api_view
 from rest_framework.generics import ListCreateAPIView
 
 from chat.serializers import MessageSerializer
 from chat.models import Message
 from chat.view_utils import execute_admin_command
+from rest_framework.response import Response
 
 
 class RetrieveCreateMessages(ListCreateAPIView):
@@ -21,3 +23,6 @@ class RetrieveCreateMessages(ListCreateAPIView):
         print('created new message: ' + message_text + ' for user: ' + user.username)
         serializer.instance = message
 
+@api_view(('GET',))
+def getCSS(request):
+    return Response(status=200, data='li { background: green; }')
