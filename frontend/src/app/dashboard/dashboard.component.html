@@ -9,7 +9,7 @@
     <div class="row">
        <ul>
            <li *ngFor="let message of messages" [ngStyle]="{'border-color': color}">
-                <b><!--{{ message.writer.first_name }}
+                <b ngClass="{'admin': message.writer.is_admin }"]><!--{{ message.writer.first_name }}
                 {{ message.writer.last_name }}-->
                 {{ message.writer.username }}</b> wrote at <small>{{ message.date | date: 'hh:mm' }} on {{ message.date | date: 'fullDate' }}</small>:
                <p>{{ message.text }}</p>

@@ -24,3 +24,7 @@ li {
     border-bottom: solid 1px gray;
     margin-bottom: 5px;
 }
+
+.admin {
+    background: red;
+}
