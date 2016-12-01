@@ -8,10 +8,11 @@
     </div>
     <div class="row">
        <ul>
-           <li *ngFor="let message of messages" [ngStyle]="{'border-color': color}">
-                <b ngClass="{'admin': message.writer.is_admin }"]><!--{{ message.writer.first_name }}
-                {{ message.writer.last_name }}-->
-                {{ message.writer.username }}</b> wrote at <small>{{ message.date | date: 'hh:mm' }} on {{ message.date | date: 'fullDate' }}</small>:
+           <li *ngFor="let message of (messages | reverse)" [ngStyle]="{'border-color': border, 'background-color': background}">
+                <b [ngClass]="{'admin': message.writer.is_admin }">{{ message.writer.username }}
+                    <small>({{ message.writer.first_name }} {{ message.writer.last_name }})</small>
+                </b> wrote at
+               <small>{{ message.date | date: 'hh:mm' }} on {{ message.date | date: 'fullDate' }}</small>:
                <p>{{ message.text }}</p>
            </li>
        </ul>

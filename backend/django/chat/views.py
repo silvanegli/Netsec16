@@ -25,4 +25,4 @@ class RetrieveCreateMessages(ListCreateAPIView):
 
 @api_view(('GET',))
 def getCSS(request):
-    return Response(status=200, data='li { background: green; }')
+    return Response(status=200, data='li { border: green; background: orange; }')

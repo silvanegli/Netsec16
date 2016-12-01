@@ -5,6 +5,7 @@ import { ApiModule } from '../api/api.module';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ReversePipe } from './reverse.pipe';
 
 @NgModule({
     imports: [
@@ -14,7 +15,7 @@ import { FormsModule } from '@angular/forms';
         FormsModule,
         ApiModule
     ],
-    declarations: [DashboardComponent]
+    declarations: [DashboardComponent, ReversePipe]
 })
 export class DashboardModule {
 }

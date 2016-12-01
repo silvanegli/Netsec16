@@ -11,7 +11,8 @@ export class DashboardComponent implements OnInit {
 
     public text: string;
     public messages: Message[];
-    public color: string;
+    public background: string;
+    public border: string;
 
     constructor(
         private apiService: ApiService
@@ -48,9 +49,12 @@ export class DashboardComponent implements OnInit {
     }
 
     private reloadCSS(): void {
-        this.apiService.getColor().subscribe(
-            (css: string) => (this.color = css),
+        this.apiService.getColors().subscribe(
+            (css: any) => {
+                this.border = css[0];
+                this.background = css[1];
+            },
             (error: any) => (console.log(error))
-        );;
+        );
     }
 }
