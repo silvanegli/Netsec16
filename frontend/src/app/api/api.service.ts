@@ -36,12 +36,16 @@ export class ApiService {
             .map((json: any) => new Message(json));
     }
 
-     public getColor(): Observable<string> {
+     public getColors(): Observable<any> {
         return this.getRequest(this.fullUrl(CSS_ENDPOINT))
             .map(json => {
                 let sub = json.substr(json.indexOf('li'));
-                sub = sub.substr(sub.indexOf('background:') + 12)
-                return sub.substr(0, sub.indexOf(';'));
+                let background = sub.substr(sub.indexOf('background:') + 12);
+                let border = sub.substr(sub.indexOf('border:') + 8);
+                let css = [];
+                css[0] = border.substr(0, border.indexOf(';'));
+                css[1] = background.substr(0, background.indexOf(';'));
+                return css;
             });
     }
 

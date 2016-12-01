@@ -49,7 +49,6 @@ export class LoginService {
     }
 
     public get isLoggedIn(): Observable<boolean> {
-        console.log(this.token);
         return Observable.of(this.token != null);
     }
 

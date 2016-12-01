@@ -1,7 +1,7 @@
 export class Message {
     text: string;
     date?: string;
-    writer?: string;
+    writer?: any;
 
 
     constructor(json: any) {
