@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 class RetrieveCreateMessages(ListCreateAPIView):
     serializer_class = MessageSerializer
-    queryset = Message.objects.all()
+    queryset = Message.objects.all().order_by('created_at')
 
     def perform_create(self, serializer):
         message_text = serializer.validated_data.get('text')
