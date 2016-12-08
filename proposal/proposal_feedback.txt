@@ -1,0 +1,33 @@
+Feedback Challenge Proposal - Group 06:
+
+1. Challenge
+
+The challenge is nice, the multiple steps required make it interesting. The way
+the admin commands-posting works could be explained in a clearer way, but that
+will be easier once you have the implementation. One suggestion (not sure if you
+already planned to do this) to enhance the final part of the challenge: you cond
+consider limiting the kind of bash command the admin is meant to issue, for
+instance by having a bash command to change the color that just takes a
+parameter containing the color value. This would then require a bash code
+injection.
+The challenge seems feasible to implement. Be careful not to over-engineer the
+implementation: this is not a software engineering project, so you should spend
+most of the time to make a nice challenge, which should work and be easy to test
+for us.
+
+2. Form
+
+The write-up look good, but you should still improve it for the final version.
+Clarify how the administrator commands work. In the final report you could maybe
+add some screenshots to either the step-by-step instructions or the challenge
+description (to add some flavor). Also, you should add the references from where
+you learned about the vulnerabilities. Make sure that you include a section
+about the setup of the challenge if anything more than just starting the VMs is
+needed. Keep in mind that we don't want to spend time to figure out how to setup
+and do your challenge.
+
+
+3. Misc. Comments
+
+Keep going like this, you are on a good track!
+

