@@ -76,8 +76,13 @@ The second part of the challenge demonstrates the danger of executing unsanitize
 \section{Implementation}
 %\subsection{Requirements}
 
-The web application is implemented in Python using the web framework Django and SQLite is used as the database backend. Token based authentication is provided by pyjwt, a Python implementation of JSON Web Tokens, which is either outdated or patched to enable the first vulnerability. The frontend of the chat application is implemented using Angular2. The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
+The web application is split into two parts. A user faces the frontend application which runs in the browser and communicates with the API which runs on the server. The JWT is sent in the header of each request to authenticate the calls.
 
+\subsection{Frontend}
+The frontend of the chat application is implemented using Angular2\footnote{https://angular.io/}. It displays the user friendly interface, renders the HTML pages and handles all user input. The data is then sent to the API in JSON format. 
+ 
+\subsection{API / Backend}
+The backend is implemented in Python using the web framework Django and SQLite is used as the database backend. Token based authentication is provided by pyjwt, a Python implementation of JSON Web Tokens, which is either outdated or patched to enable the first vulnerability. The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
 
 \section{Solution}
 
