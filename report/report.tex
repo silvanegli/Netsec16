@@ -99,6 +99,8 @@ The backend is implemented in Python using the web framework Django and SQLite i
 
 The step-by-step instructions assume that you use Linux, but all the commands can be adopted to other systems. Most of the steps can also be performed directly in the browser by interacting with the Developer Tools of the browser and the web interface of the chat application. However, sending direct GET and POST requests using \code{curl} or a similar tool might reveal more interesting details.
 
+The commands described in the following can also be found in the appendix file \code{exploit.txt} together with example tokens, such that they can easily be copied into a terminal.
+
 \subsubsection{Part 1: JWT Exploit to Bypass Authentication}
 
 \begin{enumerate}
@@ -157,7 +159,7 @@ Note that you can directly jump to step 6 if you are only interested in extracti
 	\item In the next step, try to issue various admin commands with different values for the colors and observe how the body of the CSS response changes. E.g. try the "color" \code{helloworld}:
 	\begin{verbatim}
 	curl https://web.netchat/api/messages/ --insecure
-	--data 'text=\background red'
+	--data 'text=\background helloworld'
 	-H 'Authorization: JWT ADMIN_TOKEN'
 	\end{verbatim}
 	
@@ -190,7 +192,7 @@ Note that you can directly jump to step 6 if you are only interested in extracti
 	 
 	 \item By adjusting the command to
 	 
-	 \code{text=\textbackslash background \$(ls|tr\$IFS"\textbackslash n"\$IFS",")}
+	 \code{text=\textbackslash background \$(ls\$IFS"chat"|tr\$IFS"\textbackslash n"\$IFS",")}
 
 	  one can see that there is a file called \code{settings.py} in the \code{chat} folder.
 	 
