@@ -8,6 +8,7 @@
 
 \usepackage{listings}
 
+
 % ToDo's
 \usepackage{color}
 \newcommand{\mynote}[3]{
@@ -19,9 +20,20 @@
 % Inline-Code
 \newcommand{\code}[1]{\texttt{#1}}
 
-\lstset{
-	breaklines=true,
-	basicstyle=\ttfamily}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{ %
+  backgroundcolor=\color{white},   % choose the background color
+  basicstyle=\footnotesize,        % size of fonts used for the code
+  breaklines=true,                 % automatic line breaking only at whitespace
+  captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{mygreen},    % comment style
+  escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  keywordstyle=\color{blue},       % keyword style
+  stringstyle=\color{mymauve},     % string literal style
+}
 
 
 \title{JSON Web Tokens and Bash Injection}
@@ -82,8 +94,36 @@ The web application is split into two parts. A user faces the frontend applicati
 The frontend of the chat application is implemented using Angular2\footnote{https://angular.io/}. It displays the user friendly interface, renders the HTML pages and handles all user input. The data is then sent to the API in JSON format. 
  
 \subsection{API / Backend}
-The backend is implemented in Python using the web framework Django \footnote{\url{https://www.djangoproject.com/}} and SQLite is used as the database backend. The backend provides a RESTful api with the help the Django REST framework \footnote{\url{http://www.django-rest-framework.org/}}. The api is used by the frontend in order to authenticate a user as well as sending and retrieving chat messages. Token based authentication is provided by REST framework JWT Auth \footnote{\url{http://getblimp.github.io/django-rest-framework-jwt/}} which depends on pyjwt \footnote{\url{https://pypi.python.org/pypi/PyJWT/1.4.0}}, a Python implementation of JSON Web Tokens. \\
-In order to enable the first vulnerability. The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
+The backend is implemented in Python using the web framework Django \footnote{\url{https://www.djangoproject.com/}} and SQLite is used as the database backend. The backend provides a RESTful api with the help of the "Django REST framework" \footnote{\url{http://www.django-rest-framework.org/}}. The api is used by the frontend in order to authenticate a user as well as sending and retrieving chat messages. 
+
+\subsubsection{JWT Authentication}
+Token based authentication is provided by the "REST framework JWT Auth" \footnote{\url{http://getblimp.github.io/django-rest-framework-jwt/}} which depends on pyjwt \footnote{\url{https://pypi.python.org/pypi/PyJWT/1.4.0}}, a Python implementation of JSON Web Tokens.In order to log in, the frontend sends the user's credentials (username and password) to the backend which checks them and, if correct, issues a JWT. An informative explanation of the structure and the concepts of a JWT can be found on jwt.io \footnote{\url{https://jwt.io/introduction/}} and will therefore not be discussed here in more detail.
+\subsubsection{JWT Vulnerability}
+In order to enable the JWT vulnerability we had to patch the pyjwt library. More precicely, the following line in the algorithms.py file had to be changed from
+
+\begin{lstlisting}[language=python]
+        class NoneAlgorithm(Algorithm):
+
+            def verify(self, msg, key, sig):
+                return False
+ 
+ \end{lstlisting}
+ to 
+ \begin{lstlisting}[language=python]
+        class NoneAlgorithm(Algorithm):
+
+            def verify(self, msg, key, sig)
+                return True
+  
+  \end{lstlisting}
+ 
+ With the above change, a user can login by providing a forged JWT, specifying "none" as the preferred algorithm and containing a userID he wants to be loged in as in the payload. A forged token could therefore be of the form
+ \begin{verbatim}
+{"alg": "none", "typ": "JWT"}.{"username":"admin"}.AnyFancySignature
+  \end{verbatim}
+
+ 
+ The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
 
 \section{Solution}
 
