@@ -21,6 +21,7 @@ export class DashboardComponent implements OnInit {
 
     ngOnInit() {
         this.messages = [];
+        this.reloadCSS();
         this.apiService.getMessages().subscribe(
             (messages: Message[]) => {
                 messages.map(
