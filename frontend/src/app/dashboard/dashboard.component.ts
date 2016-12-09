@@ -20,8 +20,29 @@ export class DashboardComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.messages = [];
         this.reloadCSS();
+        this.getMessages();
+
+        setInterval(() => {
+                this.getMessages();
+            }, 7000);
+    }
+
+    public onSendMessage(): void {
+        this.apiService.sendMessage({'text': this.text}).subscribe(
+            (message: Message) => {
+                this.getMessages();
+                this.text = '';
+                this.reloadCSS();
+            },
+            (error: any) => {
+                console.log(error);
+            }
+        );
+    }
+
+    private getMessages(): void {
+        this.messages = [];
         this.apiService.getMessages().subscribe(
             (messages: Message[]) => {
                 messages.map(
@@ -34,19 +55,6 @@ export class DashboardComponent implements OnInit {
                 console.log(error);
             }
         )
-    }
-
-    public onSendMessage(): void {
-        this.apiService.sendMessage({'text': this.text}).subscribe(
-            (message: Message) => {
-                this.messages.push(message);
-                this.text = '';
-                this.reloadCSS();
-            },
-            (error: any) => {
-                console.log(error);
-            }
-        );
     }
 
     private reloadCSS(): void {
