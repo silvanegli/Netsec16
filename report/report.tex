@@ -82,7 +82,8 @@ The web application is split into two parts. A user faces the frontend applicati
 The frontend of the chat application is implemented using Angular2\footnote{https://angular.io/}. It displays the user friendly interface, renders the HTML pages and handles all user input. The data is then sent to the API in JSON format. 
  
 \subsection{API / Backend}
-The backend is implemented in Python using the web framework Django and SQLite is used as the database backend. Token based authentication is provided by pyjwt, a Python implementation of JSON Web Tokens, which is either outdated or patched to enable the first vulnerability. The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
+The backend is implemented in Python using the web framework Django \footnote{\url{https://www.djangoproject.com/}} and SQLite is used as the database backend. The backend provides a RESTful api with the help the Django REST framework \footnote{\url{http://www.django-rest-framework.org/}}. The api is used by the frontend in order to authenticate a user as well as sending and retrieving chat messages. Token based authentication is provided by REST framework JWT Auth \footnote{\url{http://getblimp.github.io/django-rest-framework-jwt/}} which depends on pyjwt \footnote{\url{https://pypi.python.org/pypi/PyJWT/1.4.0}}, a Python implementation of JSON Web Tokens. \\
+In order to enable the first vulnerability. The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
 
 \section{Solution}
 
