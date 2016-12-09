@@ -24,8 +24,9 @@ export class DashboardComponent implements OnInit {
         this.getMessages();
 
         setInterval(() => {
-                this.getMessages();
-            }, 7000);
+            this.getMessages();
+            this.reloadCSS();
+        }, 7000);
     }
 
     public onSendMessage(): void {
