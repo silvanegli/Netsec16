@@ -21,12 +21,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'mhkxybwe!5v#2(794f0=yp&m^v^jn#k)v3g)u$-053)2)7+pgw'
+SECRET_KEY = 'Congratulations you just compromised the highly secure super duper secret key !'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['web.netchat', '192.168.56.10']
 
 
 # Application definition
@@ -120,6 +120,10 @@ USE_L10N = True
 USE_TZ = True
 
 
-STATIC_URL = '/static/'
+STATIC_URL = '/djangoStatic/'
+STATIC_ROOT = '/var/www/netsec/djangoStatic'
+
+
+CSS_FILE = '/opt/netsecDjango/static/custom.css'
 
 CORS_ORIGIN_ALLOW_ALL = True

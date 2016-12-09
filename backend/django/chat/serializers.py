@@ -19,4 +19,4 @@ class MessageSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Message
-        fields = ('text', 'writer', 'created_at')
+        fields = ('text', 'writer', 'created_at', 'status')
