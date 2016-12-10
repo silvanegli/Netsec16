@@ -7,6 +7,7 @@
 \usepackage{paralist}
 
 \usepackage{listings}
+\usepackage{verbatim}
 
 
 % ToDo's
@@ -21,11 +22,11 @@
 \newcommand{\code}[1]{\texttt{#1}}
 
 \definecolor{mygreen}{rgb}{0,0.6,0}
-\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mygray}{rgb}{0.97,0.97,0.97}
 \definecolor{mymauve}{rgb}{0.58,0,0.82}
 
 \lstset{ %
-  backgroundcolor=\color{white},   % choose the background color
+  backgroundcolor=\color{mygray},   % choose the background color
   basicstyle=\footnotesize,        % size of fonts used for the code
   breaklines=true,                 % automatic line breaking only at whitespace
   captionpos=b,                    % sets the caption-position to bottom
@@ -33,6 +34,7 @@
   escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
   keywordstyle=\color{blue},       % keyword style
   stringstyle=\color{mymauve},     % string literal style
+  showstringspaces=false
 }
 
 
@@ -97,33 +99,86 @@ The frontend of the chat application is implemented using Angular2\footnote{http
 The backend is implemented in Python using the web framework Django \footnote{\url{https://www.djangoproject.com/}} and SQLite is used as the database backend. The backend provides a RESTful api with the help of the "Django REST framework" \footnote{\url{http://www.django-rest-framework.org/}}. The api is used by the frontend in order to authenticate a user as well as sending and retrieving chat messages. 
 
 \subsubsection{JWT Authentication}
-Token based authentication is provided by the "REST framework JWT Auth" \footnote{\url{http://getblimp.github.io/django-rest-framework-jwt/}} which depends on pyjwt \footnote{\url{https://pypi.python.org/pypi/PyJWT/1.4.0}}, a Python implementation of JSON Web Tokens.In order to log in, the frontend sends the user's credentials (username and password) to the backend which checks them and, if correct, issues a JWT. An informative explanation of the structure and the concepts of a JWT can be found on jwt.io \footnote{\url{https://jwt.io/introduction/}} and will therefore not be discussed here in more detail.
+Token based authentication is provided by the "REST framework JWT Auth" \footnote{\url{http://getblimp.github.io/django-rest-framework-jwt/}} which depends on PyJWT \footnote{\url{https://pypi.python.org/pypi/PyJWT/1.4.0}}, a Python implementation of JSON Web Tokens.In order to log in, the frontend sends the user's credentials (username and password) to the backend which checks them. If correct Django issues a JWT and signs it with the applications secret key. An informative explanation of the structure and the concepts of a JWT can be found on jwt.io \footnote{\url{https://jwt.io/introduction/}} and will therefore not be discussed here in more detail. 
+The frontend will provide the JWT along with every further request within an http Authorization header. Upon receipt, Django decodes the JWT and verifies the Signature using the algorithm declared in the Token.
+
 \subsubsection{JWT Vulnerability}
-In order to enable the JWT vulnerability we had to patch the pyjwt library. More precicely, the following line in the algorithms.py file had to be changed from
+We first heard about the JWT vulnerability through this auth0.com \footnote{\url{https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/}} blog post.
+In order to enable the JWT vulnerability we had to patch the PyJWT library. More precicely, the following line in the algorithms.py file had to be changed from
 
 \begin{lstlisting}[language=python]
-        class NoneAlgorithm(Algorithm):
-
-            def verify(self, msg, key, sig):
-                return False
+class NoneAlgorithm(Algorithm):
+    def verify(self, msg, key, sig):
+        return False
  
  \end{lstlisting}
  to 
  \begin{lstlisting}[language=python]
-        class NoneAlgorithm(Algorithm):
-
-            def verify(self, msg, key, sig)
-                return True
+class NoneAlgorithm(Algorithm):
+    def verify(self, msg, key, sig):
+        return True
   
   \end{lstlisting}
  
- With the above change, a user can login by providing a forged JWT, specifying "none" as the preferred algorithm and containing a userID he wants to be loged in as in the payload. A forged token could therefore be of the form
+ With the above change, a user can login by providing a forged JWT, specifying \code{none} as the preferred algorithm and a userID he wants to be loged in as in the payload. A forged token could therefore be of the form
  \begin{verbatim}
 {"alg": "none", "typ": "JWT"}.{"username":"admin"}.AnyFancySignature
   \end{verbatim}
 
+\subsubsection{Command Injection}
+Command injection is an attack in which the goal is execution of arbitrary commands on the host operating system via a vulnerable application \footnote{\url{https://www.owasp.org/index.php/Command_Injection}}.\\
+Besides normal messages, an admin user can send two messages with a special format which will be interpreted by Django differently.
+\begin{enumerate}
+\item \textbf{\code{\textbackslash background pink} } \\
+Sets the background color of the chat messages to the specified color (i.e. pink)
+\item \textbf{\code{\textbackslash border black} } \\
+Sets the color of the line which separates the messages to the specified one (i.e. black) 
+\end{enumerate}
+
+\begin{lstlisting}[language=python]
+from subprocess import call
+
+CSS_FILE = '/opt/netsecDjango/static/custom.css'
+CMD_BACKGROUND = "\\background"
+CMD_COLOR = "\\border"
+
+def execute_admin_command(message):
+    command = message.split(' ')
+    if len(command) == 2 and command[0] == CMD_BACKGROUND:
+        change_background(command[1])
+    elif len(command) == 2 and command[0] == CMD_COLOR:
+        change_color(command[1])
+
+def change_background(color):
+    command = 'sed -i "s/background:.*/background: ' +  color + ' ;/g" ' + CSS_FILE
+    call_subprocess(command)
+
+def change_color(color):
+    command = 'sed -i "s/border:.*/border: ' + color + ';/g" ' + CSS_FILE
+    call_subprocess(command)
+
+def call_subprocess(command):
+    call(command, shell=True, executable='/bin/bash')
+
+
+\end{lstlisting}
+TODO: silvan explain idea
+
+\begin{comment}
+
+ This command is then executed by making use of Python's subprocess module \footnote{\url{https://docs.python.org/2/library/subprocess.html}} with the privileges of the Django application.
+ 
+ \paragraph{Vulnerability:}
+ The vulnerability arises from two inattentions:
+\begin{enumerate}
+\item \textbf{Insufficient user input validation:} The only restriction on the user's first name is the length of 64 characters. Appart from that any string is allowed.
+\item \textbf{shell=True:} Setting shell=True in Python's subprocess module makes the command beeing executed through the shell, allowing any useage of shell supported features such as command substitution. 
+\end{enumerate}
+
+\paragraph{Impact:} As a result of the vulnerability the user can execute any shell command which has the privileges of the Flask application (caweb user). This includes access to the application's settings (such as secret key) and also the possibility to act as the CA which means having all the functionality of the CA (e.g. issuing/revoking certificates) as well as access to the users' and in the intermediate CA's private keys.
  
  The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
+\end{comment}
 
 \section{Solution}
 
@@ -146,7 +201,7 @@ The commands described in the following can also be found in the appendix file \
 
 \begin{enumerate}
 	\item Open the web application and log in as user \code{max} with the password \code{123456}.
-	\item Extract the JWT token, e.g. open the Developer Tools in the browser, go to the Application tab and inspect the Session Storage. Alternatively, you can also create a few messages and analyze the TCP packets using Wireshark~\cite{wireshark} or Tamper Data~\cite{tamperdata}. The token is of the form \code{Header.Payload.Token} and is \code{base64} encoded.
+	\item Extract the JWT token, e.g. open the Developer Tools in the browser, go to the Application tab and inspect the Session Storage. Alternatively, you can also create a few messages and analyze the TCP packets using Wireshark~\cite{wireshark} or Tamper Data~\cite{tamperdata}. The token is of the form \code{Header.Payload.Signature} and is \code{base64} encoded.
 	
 	Verify that you have the correct token by creating a new chat message using the following terminal command: 
 	\begin{verbatim}
@@ -158,7 +213,9 @@ The commands described in the following can also be found in the appendix file \
 	Reload the chat and you should see a new message created by the user \code{max}.
 	
 	\item Decode the token using a base64 decoder\footnote{\url{https://www.base64decode.org/}} or an online JWT Debugger\footnote{\url{https://jwt.io/}}. As you can see, the \code{Header} specifies an algorithm and the \code{Payload} contains all the user information such as the \code{username} or the \code{user\_id}. 
-	\item To craft a fake admin token, change the algorithm to \code{none}, set the \code{username} to \code{admin}, the \code{user\_id} to \code{1} and remove the \code{Signature} (but not the last dot). Re-encode the token, which then should have the form \code{Header.Payload.}
+	\item To craft a fake admin token, change the algorithm to \code{none}, and set the username to \code{admin}.
+	% --> not needed
+	%, the \code{user\_id} to \code{1} and remove the \code{Signature} (but %not the last dot). Re-encode the token, which then should have the form %\code{Header.Payload.}
 	
 	Test your new token by creating a chat message:
 	\begin{verbatim}
