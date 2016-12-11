@@ -197,11 +197,11 @@ Sets the color of the line separating two messages to the specified color (i.e. 
 As a result, an admin user can pass any string instead of a color value which will then be interpreted by the shell. The only restriction on the input is that it does not contain any space. By using command substitution he could therefore send a message of the form
 \begin{verbatim}
 \background ${bash_command}
-\end{verbatim}
+\end{verbatim} 
 resulting in a bash command beeing executed in a subprocess with the privileges of the Django application, including access to the file system.
 
 \paragraph{User feedback}
-
+\noindent \\In order to make the life of an attacker a bit easier, we return the possible error from the \code{check\_output} subprocess call in the status field of a message object.  The status field will not be displayed but can be found by inspecting the HTTP response.
 
 
 
