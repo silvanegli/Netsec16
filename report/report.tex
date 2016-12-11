@@ -1,6 +1,7 @@
 \documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{hyperref}
+
 \usepackage{graphicx}
 \usepackage{subcaption}
 \usepackage{float}
@@ -34,7 +35,14 @@
   escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
   keywordstyle=\color{blue},       % keyword style
   stringstyle=\color{mymauve},     % string literal style
+  numbers=left,
+  stepnumber=1,
   showstringspaces=false
+}
+
+    \lstdefinelanguage{CSS}{
+      keywords={li, border, background },  
+      sensitive=true,
 }
 
 
@@ -103,7 +111,7 @@ Token based authentication is provided by the "REST framework JWT Auth" \footnot
 The frontend will provide the JWT along with every further request within an http Authorization header. Upon receipt, Django decodes the JWT and verifies the Signature using the algorithm declared in the Token.
 
 \subsubsection{JWT Vulnerability}
-We first heard about the JWT vulnerability through this auth0.com \footnote{\url{https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/}} blog post.
+We first read about the JWT vulnerability in an Auht0~\cite{auth0-jwt-vuln} blog post.
 In order to enable the JWT vulnerability we had to patch the PyJWT library. More precicely, the following line in the algorithms.py file had to be changed from
 
 \begin{lstlisting}[language=python]
@@ -122,63 +130,80 @@ class NoneAlgorithm(Algorithm):
  
  With the above change, a user can login by providing a forged JWT, specifying \code{none} as the preferred algorithm and a userID he wants to be loged in as in the payload. A forged token could therefore be of the form
  \begin{verbatim}
-{"alg": "none", "typ": "JWT"}.{"username":"admin"}.AnyFancySignature
+{"alg":"none", "typ":"JWT"}.{"username":"admin"}.AnySignature
   \end{verbatim}
 
 \subsubsection{Command Injection}
-Command injection is an attack in which the goal is execution of arbitrary commands on the host operating system via a vulnerable application \footnote{\url{https://www.owasp.org/index.php/Command_Injection}}.\\
-Besides normal messages, an admin user can send two messages with a special format which will be interpreted by Django differently.
+Command injection is an attack in which the goal is execution of arbitrary commands on the host operating system via a vulnerable application.~\cite{owasp-cmd-inj} \\
+Besides normal me1ssages, an admin user can send the following two specially formatted messages which will be interpreted by Django differently.
 \begin{enumerate}
 \item \textbf{\code{\textbackslash background pink} } \\
 Sets the background color of the chat messages to the specified color (i.e. pink)
 \item \textbf{\code{\textbackslash border black} } \\
-Sets the color of the line which separates the messages to the specified one (i.e. black) 
+Sets the color of the line separating two messages to the specified color (i.e. black) 
 \end{enumerate}
 
-\begin{lstlisting}[language=python]
-from subprocess import call
 
-CSS_FILE = '/opt/netsecDjango/static/custom.css'
-CMD_BACKGROUND = "\\background"
-CMD_COLOR = "\\border"
+\paragraph{Implementation}
 
-def execute_admin_command(message):
-    command = message.split(' ')
-    if len(command) == 2 and command[0] == CMD_BACKGROUND:
-        change_background(command[1])
-    elif len(command) == 2 and command[0] == CMD_COLOR:
-        change_color(command[1])
+\noindent \\Code listing \ref{lst:admin_command} shows the core of the command injection vulnerability implementation. Messages sent from an admin user are processed in the following way.
 
-def change_background(color):
-    command = 'sed -i "s/background:.*/background: ' +  color + ' ;/g" ' + CSS_FILE
-    call_subprocess(command)
-
-def change_color(color):
-    command = 'sed -i "s/border:.*/border: ' + color + ';/g" ' + CSS_FILE
-    call_subprocess(command)
-
-def call_subprocess(command):
-    call(command, shell=True, executable='/bin/bash')
-
-
-\end{lstlisting}
-TODO: silvan explain idea
-
-\begin{comment}
-
- This command is then executed by making use of Python's subprocess module \footnote{\url{https://docs.python.org/2/library/subprocess.html}} with the privileges of the Django application.
- 
- \paragraph{Vulnerability:}
- The vulnerability arises from two inattentions:
 \begin{enumerate}
-\item \textbf{Insufficient user input validation:} The only restriction on the user's first name is the length of 64 characters. Appart from that any string is allowed.
-\item \textbf{shell=True:} Setting shell=True in Python's subprocess module makes the command beeing executed through the shell, allowing any useage of shell supported features such as command substitution. 
+\item The \code{execute\_admin\_command} function (line 7) parses the \code{message}. It checks whether the \code{message} consists of two strings separated by a whitespace and whether the first string matches one of the two constants defined in \code{CMD\_BACKGROUND} and \code{CMD\_COLOR}. If so, it calls the corresponding function (i.e. \code{change\_background} or \code{change\_border}) with the second string as an argument. As the two functions are very similar, we will focus on \code{change\_background}.
+
+\item \code{change\_background} constructs the system command as a string (line 15) by putting in the \code{color} provided by the admin and the location of the css file defined in \code{CSS\_FILE}. The content of the custom.css file is shown in listing \ref{lst:css_file}. The idea is to replace the background color in the \code{CSS\_FILE} file with the new \code{color} by making use of the \code{sed} \footnote{\url{http://unix.stackexchange.com/questions/159367/using-sed-to-find-and-replace}} stream editor.
+
+\item  The system command is executed in a new shell (line 16) by using \code{check\_output} from Python's subprocess module \footnote{\url{https://docs.python.org/2/library/subprocess.html}}. In our setting we will use Bash (/bin/bash) as the default shell.
 \end{enumerate}
 
-\paragraph{Impact:} As a result of the vulnerability the user can execute any shell command which has the privileges of the Flask application (caweb user). This includes access to the application's settings (such as secret key) and also the possibility to act as the CA which means having all the functionality of the CA (e.g. issuing/revoking certificates) as well as access to the users' and in the intermediate CA's private keys.
- 
- The admin commands are parsed by the web framework and then executed with a bash command in a subprocess, without sanitizing the input first. The bash commands have direct access to the local file system and allow an attacker to perform a bash injection.
-\end{comment}
+
+\begin{lstlisting}[caption={Excerpt of the command injection vulnerability implementation},label={lst:admin_command}, language=python] 
+ from subprocess import check_output
+
+ CSS_FILE = "/opt/netsecDjango/static/custom.css"
+ CMD_BACKGROUND = "\\background"
+ CMD_COLOR = "\\border"
+
+ def execute_admin_command(message):
+     command = message.split(' ')
+     if len(command) == 2 and command[0] == CMD_BACKGROUND:
+         return change_background(command[1])
+     elif len(command) == 2 and command[0] == CMD_COLOR:
+         return change_border(command[1])
+     return "normal admin message"
+
+ def change_background(color):
+    command = 'sed -i "s/background:.*/background: ' +  color + ' ;/g" ' + CSS_FILE
+    return check_output(command, shell=True)
+
+ def change_border(color):
+    command = 'sed -i "s/border:.*/border: ' + color + ';/g" ' + CSS_FILE
+    return check_output(command, shell=True)
+\end{lstlisting}
+
+\begin{lstlisting}[caption={custom.css file, defining the colors of a chat message},label={lst:css_file}, language=CSS] 
+ li {
+        border: black;
+        background: pink ;
+ }
+\end{lstlisting}
+
+\paragraph{Vulnerability}
+\noindent \\The command injection vulnerability arises from two inattentions:
+\begin{enumerate}
+\item \underline{Insufficient user input validation:} The \code{execute\_admin\_command} function parses the admin's message but does not check whether the provided value is a valid color encoding.
+\item \underline{shell=True:} Setting shell=True in Python's subprocess module makes the command beeing executed through the shell, allowing any useage of shell supported features such as command substitution \footnote{\url{http://www.tldp.org/LDP/abs/html/commandsub.html}}. 
+\end{enumerate}
+As a result, an admin user can pass any string instead of a color value which will then be interpreted by the shell. The only restriction on the input is that it does not contain any space. By using command substitution he could therefore send a message of the form
+\begin{verbatim}
+\background ${bash_command}
+\end{verbatim}
+resulting in a bash command beeing executed in a subprocess with the privileges of the Django application, including access to the file system.
+
+\paragraph{User feedback}
+
+
+
 
 \section{Solution}
 
