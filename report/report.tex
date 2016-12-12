@@ -217,10 +217,10 @@ As a result, an admin user can pass any string instead of a color value which wi
 \begin{verbatim}
 \background ${bash_command}
 \end{verbatim} 
-resulting in a bash command being executed in a subprocess with the privileges of the Django application, including access to the file system.
+resulting in a bash command being executed in a subprocess with the privileges of the Django application, including access to the file system. The color value of the background property in the custom.css file will be replaced by whatever \code{bash\_command} returns. As the custom.css file is fetched by the frontend with an HTTP request, the return value of the injected bash commands can be looked up in the corresponding HTTP response. 
 
 \paragraph{User feedback}
-\noindent \\In order to make the life of an attacker a bit easier, we return the possible error from the \code{check\_output} subprocess call in the status field of a message object.  The status field will not be displayed but can be found by inspecting the HTTP response.
+\noindent \\In order to make the life of an attacker a bit easier, we return the possible error from the \code{check\_output} subprocess call in the status field of a message object.  The status field will not be displayed but can be found by inspecting the HTTP responses.
 
 
 
