@@ -94,6 +94,17 @@ The first part of the challenge teaches the student about how to collect and ana
 
 The second part of the challenge demonstrates the danger of executing unsanitized input from an untrusted source and how to exploit such a vulnerability with a limited interface.
 
+\subsection{VM Setup and How to Get Started}
+After importing the provided \code{.ova} file with VirtualBox, two VM's are available: A webserver \code{NetsecServer}, where the chat application is deployed and running, as well as a client VM \code{NetsecClient}, which should be ready out of the box to interact with and analyze the chat application. Before starting the two VM's, make sure that for both machines, the network adapters are marked to be cable connected (VM $\rightarrow$ Settings $\rightarrow$ Network $\rightarrow$ Adapter X $\rightarrow$ Advanced $\rightarrow$ Cable Connected is enabled). Bboth VM's can now be started.
+
+The following credentials can be used to interact with the system:
+\begin{itemize}
+	\item User on Client Machine: \code{client}:\code{client}
+	\item Basic Chat User: \code{max}:\code{123456}
+	\item Admin Chat User: \code{admin}:\code{superadmin} (not needed for the exploit)
+\end{itemize}
+
+On the \code{NetsecClient} VM, the chat application should be accessible using Chromium at \url{https://web.netchat} (if not, make sure that both VM's have a network adapter to be configured in the same internal network).
 
 \section{Implementation}
 %\subsection{Requirements}
@@ -107,12 +118,12 @@ The frontend of the chat application is implemented using Angular2\footnote{http
 The backend is implemented in Python using the web framework Django \footnote{\url{https://www.djangoproject.com/}} and SQLite is used as the database backend. The backend provides a RESTful api with the help of the "Django REST framework" \footnote{\url{http://www.django-rest-framework.org/}}. The api is used by the frontend in order to authenticate a user as well as sending and retrieving chat messages. 
 
 \subsubsection{JWT Authentication}
-Token based authentication is provided by the "REST framework JWT Auth" \footnote{\url{http://getblimp.github.io/django-rest-framework-jwt/}} which depends on PyJWT \footnote{\url{https://pypi.python.org/pypi/PyJWT/1.4.0}}, a Python implementation of JSON Web Tokens.In order to log in, the frontend sends the user's credentials (username and password) to the backend which checks them. If correct Django issues a JWT and signs it with the applications secret key. An informative explanation of the structure and the concepts of a JWT can be found on jwt.io \footnote{\url{https://jwt.io/introduction/}} and will therefore not be discussed here in more detail. 
-The frontend will provide the JWT along with every further request within an http Authorization header. Upon receipt, Django decodes the JWT and verifies the Signature using the algorithm declared in the Token.
+Token based authentication is provided by the "REST framework JWT Auth" \footnote{\url{http://getblimp.github.io/django-rest-framework-jwt/}} which depends on PyJWT \footnote{\url{https://pypi.python.org/pypi/PyJWT/1.4.0}}, a Python implementation of JSON Web Tokens. In order to log in, the frontend sends the user's credentials (username and password) to the backend, where they are verified. If they are correct, Django issues a JWT and signs it with the applications secret key. An informative explanation of the structure and the concepts of a JWT can be found on jwt.io \footnote{\url{https://jwt.io/introduction/}} and will therefore not be discussed here in more detail. 
+The frontend will provide the JWT along with every further request within an HTTP Authorization header. Upon receipt, Django decodes the JWT and verifies the Signature using the algorithm declared in the Token.
 
 \subsubsection{JWT Vulnerability}
 We first read about the JWT vulnerability in an Auht0~\cite{auth0-jwt-vuln} blog post.
-In order to enable the JWT vulnerability we had to patch the PyJWT library. More precicely, the following line in the algorithms.py file had to be changed from
+In order to enable the JWT vulnerability, we had to patch the PyJWT library. More precisely, the following line in the \code{algorithms.py} file had to be changed from
 
 \begin{lstlisting}[language=python]
 class NoneAlgorithm(Algorithm):
@@ -128,14 +139,14 @@ class NoneAlgorithm(Algorithm):
   
   \end{lstlisting}
  
- With the above change, a user can login by providing a forged JWT, specifying \code{none} as the preferred algorithm and a userID he wants to be loged in as in the payload. A forged token could therefore be of the form
+ With the above change, a user can login by providing a forged JWT, specifying \code{none} as the preferred algorithm in the header, and the desired userID in the payload. A forged token could therefore be of the following form:
  \begin{verbatim}
 {"alg":"none", "typ":"JWT"}.{"username":"admin"}.AnySignature
   \end{verbatim}
 
 \subsubsection{Command Injection}
-Command injection is an attack in which the goal is execution of arbitrary commands on the host operating system via a vulnerable application.~\cite{owasp-cmd-inj} \\
-Besides normal me1ssages, an admin user can send the following two specially formatted messages which will be interpreted by Django differently.
+Command injection is an attack in which the goal is the execution of arbitrary commands on the host operating system via a vulnerable application.~\cite{owasp-cmd-inj} \\
+In our chat application, besides normal text messages, an admin user can send the following two specially formatted messages, which will be interpreted by Django differently.
 \begin{enumerate}
 \item \textbf{\code{\textbackslash background pink} } \\
 Sets the background color of the chat messages to the specified color (i.e. pink)
@@ -146,14 +157,14 @@ Sets the color of the line separating two messages to the specified color (i.e. 
 
 \paragraph{Implementation}
 
-\noindent \\Code listing \ref{lst:admin_command} shows the core of the command injection vulnerability implementation. Messages sent from an admin user are processed in the following way.
+\noindent \\Code listing \ref{lst:admin_command} shows the implementation responsible for the command injection vulnerability. Messages sent from an admin user are processed in the following way.
 
 \begin{enumerate}
 \item The \code{execute\_admin\_command} function (line 7) parses the \code{message}. It checks whether the \code{message} consists of two strings separated by a whitespace and whether the first string matches one of the two constants defined in \code{CMD\_BACKGROUND} and \code{CMD\_COLOR}. If so, it calls the corresponding function (i.e. \code{change\_background} or \code{change\_border}) with the second string as an argument. As the two functions are very similar, we will focus on \code{change\_background}.
 
-\item \code{change\_background} constructs the system command as a string (line 15) by putting in the \code{color} provided by the admin and the location of the css file defined in \code{CSS\_FILE}. The content of the custom.css file is shown in listing \ref{lst:css_file}. The idea is to replace the background color in the \code{CSS\_FILE} file with the new \code{color} by making use of the \code{sed} \footnote{\url{http://unix.stackexchange.com/questions/159367/using-sed-to-find-and-replace}} stream editor.
+\item \code{change\_background} constructs the system command as a string (line 15) by putting in the \code{color} provided by the admin and the location of the css file defined in \code{CSS\_FILE}. The content of the \code{custom.css} file is shown in listing \ref{lst:css_file}. The idea is to replace the background color in the \code{CSS\_FILE} file with the new \code{color} by making use of the \code{sed} \footnote{\url{http://unix.stackexchange.com/questions/159367/using-sed-to-find-and-replace}} stream editor.
 
-\item  The system command is executed in a new shell (line 16) by using \code{check\_output} from Python's subprocess module \footnote{\url{https://docs.python.org/2/library/subprocess.html}}. In our setting we will use Bash (/bin/bash) as the default shell.
+\item  The system command is executed in a new shell (line 16) by using \code{check\_output} from Python's subprocess module \footnote{\url{https://docs.python.org/2/library/subprocess.html}}. In our setting, we will use Bash (/bin/bash) as the default shell.
 \end{enumerate}
 
 
@@ -181,7 +192,7 @@ Sets the color of the line separating two messages to the specified color (i.e. 
     return check_output(command, shell=True)
 \end{lstlisting}
 
-\begin{lstlisting}[caption={custom.css file, defining the colors of a chat message},label={lst:css_file}, language=CSS] 
+\begin{lstlisting}[caption={\code{custom.css} file, defining the colors of a chat message},label={lst:css_file}, language=CSS] 
  li {
         border: black;
         background: pink ;
@@ -194,11 +205,11 @@ Sets the color of the line separating two messages to the specified color (i.e. 
 \item \underline{Insufficient user input validation:} The \code{execute\_admin\_command} function parses the admin's message but does not check whether the provided value is a valid color encoding.
 \item \underline{shell=True:} Setting shell=True in Python's subprocess module makes the command beeing executed through the shell, allowing any useage of shell supported features such as command substitution \footnote{\url{http://www.tldp.org/LDP/abs/html/commandsub.html}}. 
 \end{enumerate}
-As a result, an admin user can pass any string instead of a color value which will then be interpreted by the shell. The only restriction on the input is that it does not contain any space. By using command substitution he could therefore send a message of the form
+As a result, an admin user can pass any string instead of a color value which will then be interpreted by the shell. The only restriction on the input is, that it may not contain any spaces. By using command substitution, he could therefore send a message of the form
 \begin{verbatim}
 \background ${bash_command}
 \end{verbatim} 
-resulting in a bash command beeing executed in a subprocess with the privileges of the Django application, including access to the file system.
+resulting in a bash command being executed in a subprocess with the privileges of the Django application, including access to the file system.
 
 \paragraph{User feedback}
 \noindent \\In order to make the life of an attacker a bit easier, we return the possible error from the \code{check\_output} subprocess call in the status field of a message object.  The status field will not be displayed but can be found by inspecting the HTTP response.
@@ -218,7 +229,7 @@ resulting in a bash command beeing executed in a subprocess with the privileges 
 \subsection{Step-by-Step Instructions}
 %a description of every step a user has to perform to solve the challenge. This does not need to be the final version, but it should allow us to get a feel for the challenge.
 
-The step-by-step instructions assume that you use Linux, but all the commands can be adopted to other systems. Most of the steps can also be performed directly in the browser by interacting with the Developer Tools of the browser and the web interface of the chat application. However, sending direct GET and POST requests using \code{curl} or a similar tool might reveal more interesting details.
+The step-by-step instructions assume that you use Linux (e.g. the provided client VM), but all the commands can be adopted to other systems. Most of the steps can also be performed directly in the browser (e.g. Chromium) by interacting with the Developer Tools of the browser and the web interface of the chat application. However, sending direct GET and POST requests using \code{curl} or a similar tool might reveal more interesting details.
 
 The commands described in the following can also be found in the appendix file \code{exploit.txt} together with example tokens, such that they can easily be copied into a terminal.
 
@@ -226,7 +237,7 @@ The commands described in the following can also be found in the appendix file \
 
 \begin{enumerate}
 	\item Open the web application and log in as user \code{max} with the password \code{123456}.
-	\item Extract the JWT token, e.g. open the Developer Tools in the browser, go to the Application tab and inspect the Session Storage. Alternatively, you can also create a few messages and analyze the TCP packets using Wireshark~\cite{wireshark} or Tamper Data~\cite{tamperdata}. The token is of the form \code{Header.Payload.Signature} and is \code{base64} encoded.
+	\item Extract the JWT token, e.g. open the Developer Tools in the browser, go to the Resources tab and inspect the Session Storage. Alternatively, you can also create a few messages and analyze the TCP packets using Wireshark~\cite{wireshark} or Tamper Data~\cite{tamperdata}. The token is of the form \code{Header.Payload.Signature} and is \code{base64} encoded.
 	
 	Verify that you have the correct token by creating a new chat message using the following terminal command: 
 	\begin{verbatim}
@@ -237,7 +248,7 @@ The commands described in the following can also be found in the appendix file \
 	
 	Reload the chat and you should see a new message created by the user \code{max}.
 	
-	\item Decode the token using a base64 decoder\footnote{\url{https://www.base64decode.org/}} or an online JWT Debugger\footnote{\url{https://jwt.io/}}. As you can see, the \code{Header} specifies an algorithm and the \code{Payload} contains all the user information such as the \code{username} or the \code{user\_id}. 
+	\item Decode the token using a base64 decoder\footnote{\url{https://www.base64decode.org/}} (decode the \code{Header} and the \code{Payload} separately) or use an online JWT Debugger\footnote{\url{https://jwt.io/}}. As you can see, the \code{Header} specifies an algorithm and the \code{Payload} contains all the user information such as the \code{username} or the \code{user\_id}. 
 	\item To craft a fake admin token, change the algorithm to \code{none}, and set the username to \code{admin}.
 	% --> not needed
 	%, the \code{user\_id} to \code{1} and remove the \code{Signature} (but %not the last dot). Re-encode the token, which then should have the form %\code{Header.Payload.}
