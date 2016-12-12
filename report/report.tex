@@ -79,7 +79,15 @@ The challenge belongs to the category Web Security and also requires some basic 
 \subsection{Mission}
 %a summary of the challenge objective. For example, a school's online registration form may have an SQL injection vulnerability. Using SQL injection in this form to execute a DROP statement can cause a school to lose their entire year's student records.
 
-A simple chat service is provided by a company in the form of a web application. There is only one chat room, and all authenticated users might read messages and send new ones to this chat room. There is an additional administrative role, which allows users belonging to this role to invoke several admin commands, e.g. to change the background color of the chat window. Admin commands sent by basic users have no effect.
+A simple chat service is provided by a company in the form of a web application. There is only one chat room, and all authenticated users might read messages and send new ones to this chat room. There is an additional administrative role, which allows users belonging to this role to invoke several admin commands, e.g. to change the background color of the chat window. Admin commands sent by basic users have no effect. Figure \ref{fig:chatapp} shows the message board of the chat application.
+
+
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.7]{chatapp.png}
+	\caption{The chat application showing the message board, two messages (one by max and one by admin), and an admin command changing the border of the messages to black.}
+	\label{fig:chatapp}
+\end{figure}
 
 The secret key used by the chat service is  highly sensitive, since it is also used by other services of the company. The goal of the challenge is to expose the secret key.
 To achieve the goal, two vulnerabilities need to be combined in a clever way.
@@ -95,7 +103,7 @@ The first part of the challenge teaches the student about how to collect and ana
 The second part of the challenge demonstrates the danger of executing unsanitized input from an untrusted source and how to exploit such a vulnerability with a limited interface.
 
 \subsection{VM Setup and How to Get Started}
-After importing the provided \code{.ova} file with VirtualBox, two VM's are available: A webserver \code{NetsecServer}, where the chat application is deployed and running, as well as a client VM \code{NetsecClient}, which should be ready out of the box to interact with and analyze the chat application. Before starting the two VM's, make sure that for both machines, the network adapters are marked to be cable connected (VM $\rightarrow$ Settings $\rightarrow$ Network $\rightarrow$ Adapter X $\rightarrow$ Advanced $\rightarrow$ Cable Connected is enabled). Bboth VM's can now be started.
+After importing the provided \code{.ova} file with VirtualBox, two VM's are available: A webserver \code{NetsecServer}, where the chat application is deployed and running, as well as a client VM \code{NetsecClient}, which should be ready out of the box to interact with and analyze the chat application. Before starting the two VM's, make sure that for both machines, the network adapters are marked to be cable connected (VM $\rightarrow$ Settings $\rightarrow$ Network $\rightarrow$ Adapter X $\rightarrow$ Advanced $\rightarrow$ Cable Connected is enabled). On the VM \code{NetsecServer} the adapter 3 needs to be adjusted, on the \code{NetsecClient} the network adapters 1 and 2 (when exporting the VM's, this setting is unfortunately lost). Both VM's can now be started.
 
 The following credentials can be used to interact with the system:
 \begin{itemize}
