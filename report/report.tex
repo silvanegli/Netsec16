@@ -211,7 +211,7 @@ Sets the color of the line separating two messages to the specified color (i.e. 
 \noindent \\The command injection vulnerability arises from two inattentions:
 \begin{enumerate}
 \item \underline{Insufficient user input validation:} The \code{execute\_admin\_command} function parses the admin's message but does not check whether the provided value is a valid color encoding.
-\item \underline{shell=True:} Setting shell=True in Python's subprocess module makes the command beeing executed through the shell, allowing any useage of shell supported features such as command substitution \footnote{\url{http://www.tldp.org/LDP/abs/html/commandsub.html}}. 
+\item \underline{shell=True:} Setting shell=True in Python's subprocess module makes the command being executed through the shell, allowing any usage of shell supported features such as command substitution \footnote{\url{http://www.tldp.org/LDP/abs/html/commandsub.html}}. 
 \end{enumerate}
 As a result, an admin user can pass any string instead of a color value which will then be interpreted by the shell. The only restriction on the input is, that it may not contain any spaces. By using command substitution, he could therefore send a message of the form
 \begin{verbatim}
