@@ -1,6 +1,6 @@
 # Idea
 The goal of the project was to build a exploitable system allowing other
-students to find an attack and thereby learn some common vulnerabilities 
+students to find an attack and thereby learn about common vulnerabilities 
 in the field of network security. The following description together with
 a step by step instruction on how to exploit the application can be found
 in the [report.pdf](report/report.pdf) file.
@@ -60,7 +60,7 @@ unsanitized input from an untrusted source and how to exploit such a vul-
 nerability with a limited interface.
 
 ### VM Setup and How to Get Started
-After importing the provided .ova file with VirtualBox, two VM’s are avail-
+After importing the .ova appliance (which can be downloaded [here](https://drive.google.com/open?id=1BmNLyehFWnQ9eDI6_3yaOl4MPkJO3gtC)) into VirtualBox, two VM’s are avail-
 able: A webserver NetsecServer, where the chat application is deployed and
 running, as well as a client VM NetsecClient, which should be ready out
 of the box to interact with and analyze the chat application. Before starting
