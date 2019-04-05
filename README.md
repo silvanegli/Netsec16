@@ -1,5 +1,5 @@
 # Idea
-The goal of the project was to build a exploitable system allowing other
+The goal of the project was to build an exploitable system allowing other
 students to find an attack and thereby learn about common vulnerabilities 
 in the field of network security. The following description together with
 a step by step instruction on how to exploit the application can be found
@@ -15,8 +15,8 @@ Using a fake authentication token, it is possible to circumvent the authenticati
 mechanism and send chat messages as an administrator.
 This enables a normal user to send privileged admin commands. The
 second part of the challenge exploits a bash injection, which is possible
-due to a wrongly configured subprocess call with unsanitized user in-
-put and therefore allows arbitrary code execution. A malicious admin
+due to a wrongly configured subprocess call with unsanitized user input
+and therefore allows arbitrary code execution. A malicious admin
 command can be crafted to extract the secret key from the settings
 file.
 
@@ -32,10 +32,10 @@ The challenge belongs to the category Web Security and also requires some
 basic Linux and Networking understanding.
 
 ### Mission
-A simple chat service is provided by a company in the form of a web appli-
-cation. There is only one chat room, and all authenticated users might read
-messages and send new ones to this chat room. There is an additional ad-
-ministrative role, which allows users belonging to this role to invoke several
+A simple chat service is provided by a company in the form of a web application.
+There is only one chat room, and all authenticated users might read
+messages and send new ones to this chat room. There is an additional administrative
+role, which allows users belonging to this role to invoke several
 admin commands, e.g. to change the background color of the chat window.
 Admin commands sent by basic users have no effect. Figure 1 shows the
 message board of the chat application.
@@ -56,12 +56,12 @@ Tokens. The vulnerability should increase the awareness of the problem, if
 the client is allowed to choose the signing algorithm.
 
 The second part of the challenge demonstrates the danger of executing
-unsanitized input from an untrusted source and how to exploit such a vul-
-nerability with a limited interface.
+unsanitized input from an untrusted source and how to exploit such a 
+vulnerability with a limited interface.
 
 ### VM Setup and How to Get Started
-After importing the .ova appliance (which can be downloaded [here](https://drive.google.com/open?id=1BmNLyehFWnQ9eDI6_3yaOl4MPkJO3gtC)) into VirtualBox, two VM’s are avail-
-able: A webserver NetsecServer, where the chat application is deployed and
+After importing the .ova appliance (which can be downloaded [here](https://drive.google.com/open?id=1BmNLyehFWnQ9eDI6_3yaOl4MPkJO3gtC)) into VirtualBox, two VM’s are available:
+A webserver NetsecServer, where the chat application is deployed and
 running, as well as a client VM NetsecClient, which should be ready out
 of the box to interact with and analyze the chat application. Before starting
 the two VM’s, make sure that for both machines, the network adapters are
